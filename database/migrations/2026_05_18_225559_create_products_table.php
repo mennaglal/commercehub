@@ -16,6 +16,10 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
+            $table->foreignId('category_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
             $table->string('name');
 
             $table->string('slug')->unique();

@@ -16,7 +16,7 @@ return new class extends Migration
 
             $table->string('slug')->unique();
 
-            // 👇 self relation
+            // self relation
             $table->foreignId('parent_id')
                 ->nullable()
                 ->constrained('categories')
