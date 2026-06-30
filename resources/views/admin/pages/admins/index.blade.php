@@ -43,7 +43,7 @@
                 <!-- table -->
                 <form id="bulkDeleteForm" method="POST" action="{{ route('admin.bulk.delete') }}">
                     @csrf
-                    <input type="hidden" name="model" value="Admin">
+                    <input type="hidden" name="model" value="User">
                     <input type="hidden" name="ids" id="selectedIds">
                     <button type="button" onclick="confirmBulkDelete()" class="btn btn-danger mb-3">
                         @lang('dashboard.delete_all')
@@ -58,6 +58,7 @@
                             <th>{{ __('dashboard.id') }}</th>
                             <th>{{__('dashboard.Name')}}</th>
                             <th>{{__('dashboard.Email')}}</th>
+                            <th>{{ __('dashboard.Role') }}</th>
                             <th>{{__('dashboard.Image')}}</th>
                             <th>{{__('dashboard.Actions')}}</th>
                         </tr>
@@ -76,10 +77,23 @@
                                 <td>{{$admin->name}}</td>
                                 <td>{{$admin->email}}</td>
                                 <td>
-                                    @if($admin->image)
-                                        <img src="{{ asset($admin->image) }}" alt="Avatar" width="50" height="50">
+
+                                    @foreach($admin->roles as $role)
+
+                                        <span class="badge badge-success">
+
+                                            {{ ucfirst(str_replace('-', ' ', $role->name)) }}
+
+                                        </span>
+
+                                    @endforeach
+
+                                </td>
+                                <td>
+                                    @if($admin->avatar)
+                                        <img src="{{ asset($admin->avatar) }}" alt="Avatar" width="50" height="50">
                                     @else
-                                        No Avatar
+                                        -
                                     @endif
                                 </td>
                 </form>
@@ -87,11 +101,22 @@
                 <td>
                     <a href="{{route('admin.admins.edit' , $admin->id)}}" style="text-decoration: none;">
                         <i class="fe fe-edit text-warning"></i> </a>
-                    <form action="{{ route('admin.admins.delete', $admin->id) }}" method="POST"
-                          id="btnDelete{{$admin->id}}" class="d-inline">
+                    <form action="{{ route('admin.admins.destroy', $admin) }}"
+                          method="POST"
+                          id="btnDelete{{ $admin->id }}"
+                          class="d-inline">
+
                         @csrf
-                        <button type="button" onclick="confirmDelete({{$admin->id}})" class="editButton"><i
-                                class="fe fe-delete text-danger"></i></button>
+                        @method('DELETE')
+
+                        <button type="button"
+                                onclick="confirmDelete({{ $admin->id }})"
+                                class="btn btn-link p-0 border-0">
+
+                            <i class="fe fe-trash text-danger"></i>
+
+                        </button>
+
                     </form>
                 </td>
                 </tr>

@@ -31,7 +31,7 @@
                     'icon' => 'fe fe-users',
                     'label' => __('dashboard.Admins'),
                     'items' => [
-                        ['route' => 'admin.admins.index', 'text' => __('dashboard.show-Admins')],
+                        ['route' => 'admin.admins.index', 'text' => __('dashboard.Show-Admins')],
                         ['route' => 'admin.admins.create', 'text' => __('dashboard.Add-Admin')],
                     ],
                 ],
