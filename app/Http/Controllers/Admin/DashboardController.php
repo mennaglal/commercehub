@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\User;
@@ -13,23 +12,49 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $usersCount = User::count();
+        // Count customer accounts only.
+        $usersCount = User::role('customer')->count();
 
-        $vendorsCount = User::role('vendor')->count();
+        // Count stores linked to vendor accounts.
+        $vendorsQuery = Store::whereHas('user', function ($query) {
+            $query->role('vendor');
+        });
 
+        $vendorsCount = (clone $vendorsQuery)->count();
+
+        // Count all products.
         $productsCount = Product::count();
 
-        $latestUsers = User::latest()->take(5)->get();
+        // Get the latest customers.
+        $latestUsers = User::role('customer')
+            ->latest()
+            ->take(5)
+            ->get();
 
-        $latestProducts = Product::latest()->take(5)->get();
+        // Get the latest vendor stores.
+        $latestVendors = (clone $vendorsQuery)
+            ->latest()
+            ->take(5)
+            ->get();
 
-        $latestVendors = Store::latest()->take(5)->get();
+        // Get the latest products.
+        $latestProducts = Product::latest()
+            ->take(5)
+            ->get();
 
-        $pendingVendors = Store::where('status', 0)->count();
+        // Count stores awaiting approval.
+        $pendingVendors = (clone $vendorsQuery)
+            ->where('approval_status', 'pending')
+            ->count();
 
-        $activeVendors = Store::where('status', 1)->count();
+        // Count approved and active stores.
+        $activeVendors = (clone $vendorsQuery)
+            ->where('approval_status', 'approved')
+            ->where('status', true)
+            ->count();
 
-        $inactiveProducts = Product::where('status', 0)->count();
+        // Count inactive products.
+        $inactiveProducts = Product::where('status', false)->count();
 
         return view('admin.pages.dashboard.index', compact(
             'usersCount',
@@ -48,21 +73,23 @@ class DashboardController extends Controller
     {
         $request->validate([
             'model' => 'required|string',
-            'ids'   => 'required|string'
+            'ids' => 'required|string',
         ]);
 
-        $modelName = "App\\Models\\" . $request->model;
+        $modelName = 'App\\Models\\' . $request->model;
 
         if (!class_exists($modelName)) {
             abort(404);
         }
 
-        $ids = explode(',', $request->ids);
+        $ids = array_filter(
+            explode(',', $request->ids),
+            fn ($id) => ctype_digit($id)
+        );
 
         $modelName::whereIn('id', $ids)->delete();
 
         return redirect()->back()
-            ->with('success', __('dashboard.deleted-successfully'));
+            ->with('success', __('messages.deleted'));
     }
-
 }

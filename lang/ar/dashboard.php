@@ -67,7 +67,8 @@ return [
 
     'Show-Vendors' => 'عرض المتاجر',
     'Pending Vendors' => 'المتاجر المعلقة',
-
+    'Add-Vendor' => 'اضافة متجر',
+    'Edit-Vendor' => 'تعدبل متجر',
     /*
     |--------------------------------------------------------------------------
     | Categories
@@ -168,4 +169,127 @@ return [
     'Cancelbtn' => 'إلغاء',
     'Yes, delete it!' => 'نعم، احذف',
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Users & Vendors Management
+    |--------------------------------------------------------------------------
+    */
+
+    'users_vendors' => [
+        'users' => 'المستخدمون', 'vendors' => 'البائعون',
+        'add_user' => 'إضافة مستخدم', 'edit_user' => 'تعديل مستخدم',
+        'add_vendor' => 'إضافة بائع', 'edit_vendor' => 'تعديل بائع',
+        'create' => 'إضافة', 'update' => 'تحديث', 'delete' => 'حذف', 'edit' => 'تعديل',
+        'cancel' => 'إلغاء', 'search' => 'بحث', 'reset' => 'إعادة تعيين', 'actions' => 'الإجراءات',
+        'status' => 'الحالة', 'name' => 'الاسم', 'email' => 'البريد الإلكتروني', 'phone' => 'رقم الهاتف',
+        'password' => 'كلمة المرور', 'password_confirmation' => 'تأكيد كلمة المرور',
+        'password_optional' => 'كلمة المرور (اتركيها فارغة للاحتفاظ بالحالية)',
+        'search_users_placeholder' => 'ابحث بالاسم أو البريد الإلكتروني أو الهاتف',
+        'search_vendors_placeholder' => 'ابحث باسم البائع أو المتجر أو البريد الإلكتروني أو الهاتف',
+        'user_active' => 'نشط', 'user_blocked' => 'محظور', 'block' => 'حظر', 'unblock' => 'إلغاء الحظر',
+        'store_name' => 'اسم المتجر', 'store_slug' => 'رابط المتجر', 'description' => 'الوصف',
+        'approval_status' => 'حالة الموافقة', 'pending' => 'قيد المراجعة', 'approved' => 'تمت الموافقة',
+        'rejected' => 'مرفوض', 'suspended' => 'موقوف', 'approve' => 'موافقة', 'reject' => 'رفض',
+        'suspend' => 'إيقاف', 'active' => 'نشط', 'inactive' => 'غير نشط', 'not_available' => '—',
+        'no_results' => 'لا توجد سجلات.', 'confirm_delete' => 'هل أنت متأكدة من حذف هذا السجل؟',
+        'confirm_delete_vendor' => 'هل أنت متأكدة من حذف البائع والمتجر؟', 'vendor_name' => 'اسم البائع',
+        'missing_store' => 'لا يوجد متجر', 'store_status' => 'حالة المتجر',
+        'slug_auto' => 'يتم إنشاؤه تلقائيًا إذا تُرك فارغًا',
+        'store_logo' => 'لوجو المتجر',
+        'store_banner' => 'بانر المتجر',
+    ],
+
+
+    // Dashboard counters
+    'users' => 'العملاء',
+    'vendors' => 'المتاجر',
+    'products' => 'المنتجات',
+
+    // Dashboard alerts
+    'Would you like to change this user status ?' => 'هل تريد تغيير حالة هذا المستخدم؟',
+    'User status has been changed.' => 'تم تغيير حالة المستخدم بنجاح.',
+    'Something went wrong.' => 'حدث خطأ ما.',
+    'Could not activate the user.' => 'تعذر تفعيل المستخدم.',
+
+    'delete_selected' => 'حذف المحدد',
+    'warning' => 'تنبيه',
+    'no_items_selected' => 'يرجى تحديد عنصر واحد على الأقل.',
+    'confirm_bulk_delete' => 'هل أنتِ متأكدة؟',
+    'selected_items_will_be_deleted' => 'سيتم حذف العناصر المحددة نهائيًا.',
+    'confirm_delete_selected' => 'نعم، احذف المحدد',
+    'cancel' => 'إلغاء',
+
+
+    'Currencies' => 'العملات',
+    'Show-Currencies' => 'عرض العملات',
+    'Add-Currency' => 'إضافة عملة',
+    'Edit-Currency' => 'تعديل العملة',
+
+    'Countries' => 'الدول',
+    'Show-Countries' => 'عرض الدول',
+    'Add-Country' => 'إضافة دولة',
+    'Edit-Country' => 'تعديل الدولة',
+
+    'Cities' => 'المدن',
+    'Show-Cities' => 'عرض المدن',
+    'Add-City' => 'إضافة مدينة',
+    'Edit-City' => 'تعديل المدينة',
+
+    'Areas' => 'المناطق',
+    'Show-Areas' => 'عرض المناطق',
+    'Add-Area' => 'إضافة منطقة',
+    'Edit-Area' => 'تعديل المنطقة',
+
+    'Arabic name' => 'الاسم بالعربية',
+    'English name' => 'الاسم بالإنجليزية',
+    'Code' => 'الكود',
+    'Currency Code' => 'كود العملة',
+    'Country code (2 letters)' => 'كود الدولة (حرفان)',
+    'Code (3 letters)' => 'الكود (3 أحرف)',
+    'Symbol' => 'الرمز',
+    'Decimal places' => 'عدد الخانات العشرية',
+    'Country' => 'الدولة',
+    'Currency' => 'العملة',
+    'City' => 'المدينة',
+    'Area' => 'المنطقة',
+    'Select country' => 'اختر الدولة',
+    'Select currency' => 'اختر العملة',
+    'Select city' => 'اختر المدينة',
+    'Status' => 'الحالة',
+    'Active' => 'نشط',
+    'Inactive' => 'غير نشط',
+    'Search...' => 'بحث...',
+    'This record will be deleted.' => 'سيتم حذف هذا السجل.',
+    'Cancel' => 'إلغاء',
+    'No records found.' => 'لا توجد سجلات.',
+    'Created At' => 'تاريخ الإنشاء',
+    'ID' => 'المعرف',
+    'Decimal places must be between 0 and 9.' => 'عدد الخانات العشرية يجب أن يكون بين 0 و9.',
+    'exchange_rate_help' => 'كل وحدة من هذه العملة تساوي هذا المبلغ بالجنيه المصري.',
+    'egp_exchange_rate_note' => 'بالنسبة للجنيه المصري (EGP)، سعر الصرف ثابت دائمًا ويساوي 1.',
+    'Currency Name Arabic' => 'اسم العملة بالعربي',
+    'Currency Name English' => 'اسم العملة بالإنجليزي',
+    'Currency Symbol' => 'رمز العملة',
+    'Decimal Places' => 'عدد الخانات العشرية',
+    'Exchange rate to EGP' => 'سعر الصرف مقابل الجنيه المصري',
+    'Edit-Category' => 'تعديل القسم',
+    'Parent Category' => 'القسم الرئيسي',
+    'Main Category' => 'قسم رئيسي',
+    'No data available' => 'لا توجد بيانات',
+    'Sub-Categories' => 'الأقسام الفرعية',
+    'Add-Sub-Category' => 'إضافة قسم فرعي',
+    'Edit-Sub-Category' => 'تعديل قسم فرعي',
+    'Show-Sub-Categories' => 'عرض الأقسام الفرعية',
+
+    'English Name' => 'الاسم بالإنجليزية',
+    'Arabic Name' => 'الاسم بالعربية',
+    'Slug' => 'الرابط المختصر',
+    'Subcategories Count' => 'عدد الأقسام الفرعية',
+    'Maximum image size' => 'الحد الأقصى لحجم الصورة: 2 ميجابايت.',
+    'Leave blank to generate slug' => 'اترك الحقل فارغًا لإنشاء الرابط من الاسم الإنجليزي.',
+    'Category Image' => 'صورة القسم',
+    'Please enter a valid English slug.' => 'يرجى إدخال رابط مختصر صالح باللغة الإنجليزية.',
+    'This slug already exists.' => 'هذا الرابط المختصر مستخدم بالفعل.',
+    'Select main category' => 'اختر القسم الرئيسي',
 ];

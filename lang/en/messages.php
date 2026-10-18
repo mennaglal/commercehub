@@ -21,4 +21,31 @@ return [
     'deleted_successfully' => 'Deleted successfully.',
 
     'cannot_delete_super_admin' => 'You cannot delete the Super Admin.',
+
+
+    // Users messages
+    'user_created' => 'User created successfully.',
+    'user_updated' => 'User updated successfully.',
+    'user_deleted' => 'User deleted successfully.',
+    'user_blocked' => 'User blocked successfully.',
+    'user_unblocked' => 'User unblocked successfully.',
+
+    // Vendors messages
+    'vendor_created' => 'Vendor created successfully. The store is awaiting approval.',
+    'vendor_updated' => 'Vendor updated successfully.',
+    'vendor_deleted' => 'Vendor deleted successfully.',
+    'vendor_approved' => 'Vendor approved successfully.',
+    'vendor_rejected' => 'Vendor rejected successfully.',
+    'vendor_suspended' => 'Vendor suspended successfully.',
+
+    // currency ,country ,city
+    'currency_has_countries' => 'Cannot delete this currency because it is assigned to one or more countries.',
+    'country_has_cities' => 'Cannot delete this country because it has cities.',
+    'city_has_areas' => 'Cannot delete this city because it has areas.',
+    'area_in_use' => 'This area cannot be deleted because it is being used.',
+    'currency_in_use' => 'This currency cannot be deleted because it is being used.',
+    'country_in_use' => 'This country cannot be deleted because it is being used.',
+    'city_in_use' => 'This city cannot be deleted because it is being used.',
+
+
 ];
