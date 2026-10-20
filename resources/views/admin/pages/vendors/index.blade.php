@@ -27,8 +27,9 @@
                 @csrf
                 <input type="hidden" name="model" value="User">
                 <input type="hidden" name="ids" id="vendorsSelectedIds">
+            </form>
 
-                <div class="table-responsive">
+            <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead>
                         <tr>
@@ -39,6 +40,9 @@
                             <th>{{ __('dashboard.users_vendors.store_name') }}</th>
                             <th>{{ __('dashboard.users_vendors.approval_status') }}</th>
                             <th>{{ __('dashboard.users_vendors.store_status') }}</th>
+                            <th>{{ __('dashboard.Country') }}</th>
+                            <th>{{ __('dashboard.City') }}</th>
+                            <th>{{ __('dashboard.Area') }}</th>
                             <th>{{ __('dashboard.users_vendors.store_logo') }}</th>
                             <th>{{ __('dashboard.users_vendors.store_banner') }}</th>
                             <th>{{ __('dashboard.users_vendors.actions') }}</th>
@@ -73,6 +77,29 @@
                                             ? __('dashboard.users_vendors.active')
                                             : __('dashboard.users_vendors.inactive'))
                                         : __('dashboard.users_vendors.not_available') }}
+                                </td>
+                                <td>
+                                    {{ $vendor->store?->country
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $vendor->store->country->name_ar
+                                            : $vendor->store->country->name_en)
+                                        : '-' }}
+                                </td>
+
+                                <td>
+                                    {{ $vendor->store?->city
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $vendor->store->city->name_ar
+                                            : $vendor->store->city->name_en)
+                                        : '-' }}
+                                </td>
+
+                                <td>
+                                    {{ $vendor->store?->area
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $vendor->store->area->name_ar
+                                            : $vendor->store->area->name_en)
+                                        : '-' }}
                                 </td>
                                 <td>
                                     @if($vendor->store?->logo)
@@ -168,7 +195,6 @@
                         </tbody>
                     </table>
                 </div>
-            </form>
 
             {{ $vendors->links() }}
 

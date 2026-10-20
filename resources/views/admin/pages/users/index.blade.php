@@ -29,7 +29,7 @@
                 @csrf
                 <input type="hidden" name="model" value="User">
                 <input type="hidden" name="ids" id="usersSelectedIds">
-
+            </form>
                 <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead>
@@ -42,6 +42,9 @@
                             <th>{{ __('dashboard.users_vendors.email') }}</th>
                             <th>{{ __('dashboard.users_vendors.phone') }}</th>
                             <th>{{ __('dashboard.users_vendors.status') }}</th>
+                            <th>{{ __('dashboard.Country') }}</th>
+                            <th>{{ __('dashboard.City') }}</th>
+                            <th>{{ __('dashboard.Area') }}</th>
                             <th>{{ __('dashboard.Image') }}</th>
                             <th>{{ __('dashboard.users_vendors.actions') }}</th>
                         </tr>
@@ -66,7 +69,29 @@
                                     : __('dashboard.users_vendors.user_blocked') }}
                             </span>
                                 </td>
+                                <td>
+                                    {{ $user->country
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $user->country->name_ar
+                                            : $user->country->name_en)
+                                        : '-' }}
+                                </td>
 
+                                <td>
+                                    {{ $user->city
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $user->city->name_ar
+                                            : $user->city->name_en)
+                                        : '-' }}
+                                </td>
+
+                                <td>
+                                    {{ $user->area
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $user->area->name_ar
+                                            : $user->area->name_en)
+                                        : '-' }}
+                                </td>
                                 <td>
                                     @if($user->avatar)
                                         <img
@@ -126,7 +151,7 @@
                         </tbody>
                     </table>
                 </div>
-            </form>
+
 
             {{ $users->links() }}
 

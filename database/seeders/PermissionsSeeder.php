@@ -29,7 +29,9 @@ class PermissionsSeeder extends Seeder
             'countries' => ['view', 'create', 'update', 'delete'],
             'cities' => ['view', 'create', 'update', 'delete'],
             'areas' => ['view', 'create', 'update', 'delete'],
-        ];
+            'variant-types' => ['view', 'create', 'update', 'delete'],
+            'variant-values' => ['view', 'create', 'update', 'delete'],
+            ];
 
         foreach ($modules as $module => $actions) {
             foreach ($actions as $action) {

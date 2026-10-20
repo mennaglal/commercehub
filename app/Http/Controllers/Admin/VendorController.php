@@ -10,12 +10,20 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-
+use App\Models\Area;
+use App\Models\City;
+use App\Models\Country;
 class VendorController extends Controller
 {
     private function vendorsQuery()
     {
-        return User::role('vendor')->with(['store', 'roles']);
+        return User::role('vendor')
+            ->with([
+                'store.country',
+                'store.city',
+                'store.area',
+                'roles',
+            ]);
     }
 
     public function index(Request $request)
@@ -39,7 +47,15 @@ class VendorController extends Controller
 
     public function create()
     {
-        return view('admin.pages.vendors.create');
+        $countries = Country::orderBy('name_en')->get();
+        $cities = City::orderBy('name_en')->get();
+        $areas = Area::orderBy('name_en')->get();
+
+        return view('admin.pages.vendors.create', compact(
+            'countries',
+            'cities',
+            'areas'
+        ));
     }
 
 
@@ -55,6 +71,21 @@ class VendorController extends Controller
             'description' => ['nullable', 'string'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'country_id' => ['nullable', 'integer', 'exists:countries,id'],
+
+            'city_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('cities', 'id')
+                    ->where('country_id', $request->input('country_id')),
+            ],
+
+            'area_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('areas', 'id')
+                    ->where('city_id', $request->input('city_id')),
+            ],
         ]);
 
         $uploadPath = public_path('uploads/stores');
@@ -105,6 +136,9 @@ class VendorController extends Controller
                 'banner' => $bannerPath,
                 'status' => true,
                 'approval_status' => 'pending',
+                'country_id' => $data['country_id'] ?? null,
+                'city_id' => $data['city_id'] ?? null,
+                'area_id' => $data['area_id'] ?? null,
             ]);
         });
 
@@ -115,11 +149,20 @@ class VendorController extends Controller
     public function edit(User $vendor)
     {
         abort_unless($vendor->hasRole('vendor'), 404);
+
         $vendor->load('store');
 
-        return view('admin.pages.vendors.edit', compact('vendor'));
-    }
+        $countries = Country::orderBy('name_en')->get();
+        $cities = City::orderBy('name_en')->get();
+        $areas = Area::orderBy('name_en')->get();
 
+        return view('admin.pages.vendors.edit', compact(
+            'vendor',
+            'countries',
+            'cities',
+            'areas'
+        ));
+    }
     public function update(Request $request, User $vendor)
     {
         abort_unless($vendor->hasRole('vendor'), 404);
@@ -146,6 +189,21 @@ class VendorController extends Controller
             'description' => ['nullable', 'string'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'banner' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'country_id' => ['nullable', 'integer', 'exists:countries,id'],
+
+            'city_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('cities', 'id')
+                    ->where('country_id', $request->input('country_id')),
+            ],
+
+            'area_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('areas', 'id')
+                    ->where('city_id', $request->input('city_id')),
+            ],
         ]);
 
         $uploadPath = public_path('uploads/stores');
@@ -203,6 +261,9 @@ class VendorController extends Controller
                     'description' => $data['description'] ?? null,
                     'logo' => $logoPath,
                     'banner' => $bannerPath,
+                    'country_id' => $data['country_id'] ?? null,
+                    'city_id' => $data['city_id'] ?? null,
+                    'area_id' => $data['area_id'] ?? null,
                 ]
             );
 

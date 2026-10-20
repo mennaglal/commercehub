@@ -38,15 +38,19 @@
                         <label>{{ __('dashboard.users_vendors.store_name') }}</label>
                         <input class="form-control" name="store_name" value="{{ old('store_name') }}" required>
                     </div>
-                    <div class="form-group col-md-6">
-                        <label>{{ __('dashboard.users_vendors.store_slug') }}</label>
-                        <input class="form-control" name="slug" value="{{ old('slug') }}" placeholder="{{ __('dashboard.users_vendors.slug_auto') }}">
-                    </div>
                     <div class="form-group col-12">
                         <label>{{ __('dashboard.users_vendors.description') }}</label>
                         <textarea class="form-control" name="description" rows="4">{{ old('description') }}</textarea>
                     </div>
                 </div>
+                @include('admin.pages.vendors._location-fields', [
+                    'countries' => $countries,
+                    'cities' => $cities,
+                    'areas' => $areas,
+                    'selectedCountry' => '',
+                    'selectedCity' => '',
+                    'selectedArea' => '',
+                ])
 
                 <div class="form-group col-md-6">
                     <label>{{ __('dashboard.users_vendors.store_logo') }}</label>

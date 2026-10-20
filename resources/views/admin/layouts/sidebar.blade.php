@@ -120,6 +120,43 @@
                 ],
 
                 [
+                    'id' => 'variant-types',
+                    'icon' => 'fe fe-sliders',
+                    'label' => __('dashboard.variant_types.title'),
+                    'permission' => 'variant-types.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.variant-types.index',
+                            'text' => __('dashboard.variant_types.title'),
+                            'permission' => 'variant-types.view',
+                        ],
+                        [
+                            'route' => 'admin.variant-types.create',
+                            'text' => __('dashboard.variant_types.add'),
+                            'permission' => 'variant-types.create',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'products',
+                    'icon' => 'fe fe-box',
+                    'label' => __('dashboard.Products'),
+                    'permission' => 'products.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.products.index',
+                            'text' => __('dashboard.Show-Products'),
+                            'permission' => 'products.view',
+                        ],
+                        [
+                            'route' => 'admin.products.create',
+                            'text' => __('dashboard.Add-Product'),
+                            'permission' => 'products.create',
+                        ],
+                    ],
+                ],
+
+                [
                     'id' => 'currencies',
                     'icon' => 'fe fe-dollar-sign',
                     'label' => __('dashboard.Currencies'),

@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SubCategoryController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VariantTypeController;
 use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\CountryController;
@@ -149,6 +150,27 @@ Route::middleware(['auth', 'role:super-admin|admin|moderator|support'])->group(f
     Route::resource('categories',CategoryController::class);
 
     Route::resource('sub-categories',SubCategoryController::class);
+
+
+    Route::resource('variant-types', VariantTypeController::class)
+        ->except(['show'])
+        ->names('variant-types');
+
+    Route::post(
+        'variant-types/{variantType}/values',
+        [VariantTypeController::class, 'storeValue']
+    )->name('variant-types.values.store');
+
+    Route::put(
+        'variant-types/{variantType}/values/{variantValue}',
+        [VariantTypeController::class, 'updateValue']
+    )->name('variant-types.values.update');
+
+    Route::delete(
+        'variant-types/{variantType}/values/{variantValue}',
+        [VariantTypeController::class, 'destroyValue']
+    )->name('variant-types.values.destroy');
+
 
     Route::resource('products',ProductController::class);
 
