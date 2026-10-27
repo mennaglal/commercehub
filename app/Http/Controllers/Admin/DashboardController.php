@@ -3,10 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Area;
+use App\Models\Category;
+use App\Models\City;
+use App\Models\Country;
+use App\Models\Currency;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\User;
+use App\Models\VariantType;
+use App\Models\VariantValue;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Role;
 
 class DashboardController extends Controller
 {
@@ -69,27 +78,34 @@ class DashboardController extends Controller
         ));
     }
 
+    private const DELETABLE = [
+        'User'         => [User::class, 'admins.delete'],
+        'User'          => [User::class, 'users.delete'],
+        'Store'        => [User::class, 'vendors.delete'],
+        'Category'     => [Category::class, 'categories.delete'],
+        'Product'       => [Product::class, 'products.delete'],
+        'Rule'          => [Role::class, 'roles.delete'],
+        'Currency'     => [Currency::class, 'currencies.delete'],
+        'Country'      => [Country::class, 'countries.delete'],
+        'City'         => [City::class, 'cities.delete'],
+        'Area'          => [Area::class, 'areas.delete'],
+        'VariantType'  => [VariantType::class, 'variant-types.delete'],
+        'VariantValue' => [VariantValue::class, 'variant-values.delete'],
+    ];
+
     public function bulkDelete(Request $request)
     {
         $request->validate([
-            'model' => 'required|string',
-            'ids' => 'required|string',
+            'model' => ['required', Rule::in(array_keys(self::DELETABLE))],
+            'ids'   => ['required', 'string'],
         ]);
 
-        $modelName = 'App\\Models\\' . $request->model;
+        [$class, $permission] = self::DELETABLE[$request->model];
+        abort_unless($request->user()->can($permission), 403);
 
-        if (!class_exists($modelName)) {
-            abort(404);
-        }
+        $ids = array_filter(explode(',', $request->ids), 'ctype_digit');
+        $class::whereIn('id', $ids)->delete();
 
-        $ids = array_filter(
-            explode(',', $request->ids),
-            fn ($id) => ctype_digit($id)
-        );
-
-        $modelName::whereIn('id', $ids)->delete();
-
-        return redirect()->back()
-            ->with('success', __('messages.deleted'));
+        return back()->with('success', __('messages.deleted'));
     }
 }

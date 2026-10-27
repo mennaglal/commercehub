@@ -6,10 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\VariantType;
 use App\Models\VariantValue;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Validation\Rule;
 
-class VariantTypeController extends Controller
+class VariantTypeController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:variant-types.view', only: ['index']),
+            new Middleware('permission:variant-types.create', only: ['create', 'store', 'storeValue']),
+            new Middleware('permission:variant-types.update', only: ['edit', 'update', 'updateValue']),
+            new Middleware('permission:variant-types.delete', only: ['destroy', 'destroyValue']),
+        ];
+    }
+
+
     public function index()
     {
         $variantTypes = VariantType::withCount('values')

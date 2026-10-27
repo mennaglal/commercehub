@@ -7,10 +7,22 @@ use App\Models\City;
 use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Validation\Rule;
 
-class CityController extends Controller
+class CityController extends Controller implements HasMiddleware
+
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:cities.view', only: ['index']),
+            new Middleware('permission:cities.create', only: ['create', 'store']),
+            new Middleware('permission:cities.update', only: ['edit', 'update']),
+            new Middleware('permission:cities.delete', only: ['destroy']),
+        ];
+    }
     public function index(Request $request)
     {
         $cities = City::with('country')

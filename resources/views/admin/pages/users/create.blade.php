@@ -55,8 +55,7 @@
                             @foreach($countries as $country)
                                 <option value="{{ $country->id }}"
                                     @selected(old('country_id') == $country->id)>
-                                    {{ app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en }}
-                                </option>
+                                    {{ app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en }}                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -69,8 +68,7 @@
                                 <option value="{{ $city->id }}"
                                         data-country="{{ $city->country_id }}"
                                     @selected(old('city_id') == $city->id)>
-                                    {{ app()->getLocale() === 'ar' ? $city->name_ar : $city->name_en }}
-                                </option>
+                                    {{ app()->getLocale() === 'ar' ? $city->name_ar : $city->name_en }}                                </option>
                             @endforeach
                         </select>
                     </div>

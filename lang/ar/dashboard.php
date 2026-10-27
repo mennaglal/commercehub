@@ -340,5 +340,6 @@ return [
     'edit'=>'تعديل',
     'add'=>'اضافة',
     'delete'=>'حذف',
+    'Leave password blank if you do not want to change it'=>'اترك حقل كلمة المرور فارغاً إذا كنت لا ترغب في تغييرها',
 
 ];

@@ -5,14 +5,52 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
-
-class AdminController extends Controller
+use App\Services\ImageUploader;
+use Illuminate\Validation\Rule;
+use Throwable;
+use App\Http\Requests\Admin\AdminRequest;
+class AdminController extends Controller implements HasMiddleware
 {
 
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:admins.view', only: ['index']),
+            new Middleware('permission:admins.create', only: ['create', 'store']),
+            new Middleware('permission:admins.update', only: ['edit', 'update']),
+            new Middleware('permission:admins.delete', only: ['destroy']),
+        ];
+    }
+
+    private const ADMIN_ROLES = ['super-admin', 'admin', 'moderator', 'support'];
+
+    public function __construct(private ImageUploader $images) {}
+
+    // Roles the current admin is allowed to hand out.
+    private function assignableRoles()
+    {
+        return Role::whereNotIn('name', ['vendor', 'customer'])
+            ->when(
+                ! auth()->user()->hasRole('super-admin'),
+                fn ($query) => $query->where('name', '!=', 'super-admin')
+            )
+            ->get();
+    }
+
+    // Stops touching customers/vendors through this controller, and protects super-admins.
+    private function ensureManageable(User $admin): void
+    {
+        abort_unless($admin->hasAnyRole(self::ADMIN_ROLES), 404);
+
+        if ($admin->hasRole('super-admin')) {
+            abort_unless(auth()->user()->hasRole('super-admin'), 403);
+        }
+    }
     /**
      * Display a listing of the admins.
      */
@@ -46,182 +84,108 @@ class AdminController extends Controller
      */
     public function create()
     {
-        $roles = Role::whereNotIn('name', [
-            'vendor',
-            'customer',
-        ])->get();
+        $roles = $this->assignableRoles();
 
         return view('admin.pages.admins.create', compact('roles'));
     }
 
-    /**
-     * Store a newly created admin.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-
-            'name' => 'required|string|max:255',
-
-            'email' => 'required|email|unique:users,email',
-
-            'password' => 'required|min:6|confirmed',
-
-            'role' => 'required|exists:roles,name',
-
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-
-
-        ]);
-
-        DB::transaction(function () use ($request) {
-            // upload folder
-            $uploadPath = public_path('uploads/admins');
-
-            // create folder if not exists
-            if (!File::exists($uploadPath)) {
-                File::makeDirectory($uploadPath, 0755, true);
-            }
-
-            // upload avatar
-            $avatarPath = null;
-
-            if ($request->hasFile('avatar')) {
-
-                $avatar = $request->file('avatar');
-
-                $avatarName = time() . '_avatar.' . $avatar->getClientOriginalExtension();
-
-                $avatar->move($uploadPath, $avatarName);
-
-                $avatarPath = 'uploads/admins/' . $avatarName;
-            }
-
-            $admin = User::create([
-
-                'name' => $request->name,
-
-                'email' => $request->email,
-
-                'password' => Hash::make($request->password),
-
-                'avatar'   => $avatarPath,
-
-
-            ]);
-
-            $admin->assignRole($request->role);
-
-        });
-
-        return redirect()
-            ->route('admin.admins.index')
-            ->with('success', __('messages.created_successfully'));
-    }
 
     /**
      * Show the form for editing the admin.
      */
     public function edit(User $admin)
     {
-        $roles = Role::whereNotIn('name', [
-            'vendor',
-            'customer',
-        ])->get();
+        $this->ensureManageable($admin);
+        $roles = $this->assignableRoles();
 
         return view('admin.pages.admins.edit', compact('admin', 'roles'));
     }
 
-    /**
-     * Update the specified admin.
-     */
-    public function update(Request $request, User $admin)
+    public function store(AdminRequest $request)
     {
-        $request->validate([
+        $data = $request->validated();
 
-            'name' => 'required|string|max:255',
+        $avatarPath = $request->hasFile('avatar')
+            ? $this->images->upload($request->file('avatar'), 'admins')
+            : null;
 
-            'email' => 'required|email|unique:users,email,' . $admin->id,
+        try {
+            DB::transaction(function () use ($data, $avatarPath) {
+                $admin = User::create([
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'password' => Hash::make($data['password']),
+                    'avatar' => $avatarPath,
+                ]);
 
-            'password' => 'nullable|min:6|confirmed',
+                $admin->assignRole($data['role']);
+            });
+        } catch (Throwable $e) {
+            $this->images->delete($avatarPath);   // do not leave an orphan file behind
+            throw $e;
+        }
 
-            'role' => 'required|exists:roles,name',
+        return redirect()
+            ->route('admin.admins.index')
+            ->with('success', __('messages.created_successfully'));
+    }
 
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    public function update(AdminRequest $request, User $admin)
+    {
+        $this->ensureManageable($admin);
 
+        $data = $request->validated();
 
-        ]);
+        $oldAvatar = $admin->avatar;
+        $newAvatar = $request->hasFile('avatar')
+            ? $this->images->upload($request->file('avatar'), 'admins')
+            : null;
 
-        DB::transaction(function () use ($request, $admin) {
+        try {
+            DB::transaction(function () use ($data, $admin, $newAvatar) {
+                $payload = [
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'avatar' => $newAvatar ?? $admin->avatar,
+                ];
 
-            $avatarPath = $admin->avatar;
-
-            // upload folder
-            $uploadPath = public_path('uploads/admins');
-
-            // create folder if not exists
-            if (!File::exists($uploadPath)) {
-                File::makeDirectory($uploadPath, 0755, true);
-            }
-
-            // upload new avatar
-            if ($request->hasFile('avatar')) {
-
-                // delete old avatar
-                if ($admin->avatar && File::exists(public_path($admin->avatar))) {
-                    File::delete(public_path($admin->avatar));
+                if (! empty($data['password'])) {
+                    $payload['password'] = Hash::make($data['password']);
                 }
 
-                $avatar = $request->file('avatar');
+                $admin->update($payload);
+                $admin->syncRoles([$data['role']]);
+            });
+        } catch (Throwable $e) {
+            $this->images->delete($newAvatar);
+            throw $e;
+        }
 
-                $avatarName = time() . '_avatar.' . $avatar->getClientOriginalExtension();
-
-                $avatar->move($uploadPath, $avatarName);
-
-                $avatarPath = 'uploads/admins/' . $avatarName;
-            }
-
-            $admin->update([
-
-                'name' => $request->name,
-
-                'email' => $request->email,
-
-                'password' => $request->filled('password')
-                    ? Hash::make($request->password)
-                    : $admin->password,
-
-                'avatar' => $avatarPath,
-
-            ]);
-
-            $admin->syncRoles([$request->role]);
-
-        });
+        if ($newAvatar) {
+            $this->images->delete($oldAvatar);    // delete the old one only after success
+        }
 
         return redirect()
             ->route('admin.admins.index')
             ->with('success', __('messages.updated_successfully'));
     }
 
-    /**
-     * Remove the specified admin.
-     */
     public function destroy(User $admin)
     {
-        if ($admin->hasRole('super-admin')) {
+        $this->ensureManageable($admin);
 
-            return back()->with(
-                'error',
-                __('messages.cannot_delete_super_admin')
-            );
+        if ($admin->hasRole('super-admin')) {
+            return back()->with('error', __('messages.cannot_delete_super_admin'));
         }
 
-        $admin->delete();
+        abort_if($admin->is(auth()->user()), 403);   // an admin cannot delete themselves
 
-        return back()->with(
-            'success',
-            __('messages.deleted_successfully')
-        );
+        $avatar = $admin->avatar;
+
+        $admin->tokens()->delete();
+        $admin->delete();
+        $this->images->delete($avatar);
+
+        return back()->with('success', __('messages.deleted_successfully'));
     }
 }

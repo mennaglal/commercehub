@@ -41,88 +41,88 @@
                 </div>
 
                 <!-- table -->
+
                 <form id="bulkDeleteForm" method="POST" action="{{ route('admin.bulk.delete') }}">
                     @csrf
+
                     <input type="hidden" name="model" value="User">
                     <input type="hidden" name="ids" id="selectedIds">
+
                     <button type="button" onclick="confirmBulkDelete()" class="btn btn-danger mb-3">
                         @lang('dashboard.delete_all')
                     </button>
-                    <table class="table table-bordered">
-                        <thead>
-                        <tr role="row">
-                            <th>
-                                <input type="checkbox" id="selectAll">
-                            </th>
-                            <th>#</th>
-                            <th>{{ __('dashboard.id') }}</th>
-                            <th>{{__('dashboard.Name')}}</th>
-                            <th>{{__('dashboard.Email')}}</th>
-                            <th>{{ __('dashboard.Role') }}</th>
-                            <th>{{__('dashboard.Image')}}</th>
-                            <th>{{__('dashboard.Actions')}}</th>
-                        </tr>
-                        </thead>
-                        <tbody id="adminTableBody">
-                        @php
-                            $i = 1;
-                        @endphp
-                        @foreach($admins as $admin)
-                            <tr>
-                                <td>
-                                    <input type="checkbox" class="row-checkbox" value="{{ $admin->id }}">
-                                </td>
-                                <td>{{$i++}}</td>
-                                <td>{{$admin->id }}</td>
-                                <td>{{$admin->name}}</td>
-                                <td>{{$admin->email}}</td>
-                                <td>
-
-                                    @foreach($admin->roles as $role)
-
-                                        <span class="badge badge-success">
-
-                                            {{ ucfirst(str_replace('-', ' ', $role->name)) }}
-
-                                        </span>
-
-                                    @endforeach
-
-                                </td>
-                                <td>
-                                    @if($admin->avatar)
-                                        <img src="{{ asset($admin->avatar) }}" alt="Avatar" width="50" height="50">
-                                    @else
-                                        -
-                                    @endif
-                                </td>
                 </form>
 
-                <td>
-                    <a href="{{route('admin.admins.edit' , $admin->id)}}" style="text-decoration: none;">
-                        <i class="fe fe-edit text-warning"></i> </a>
-                    <form action="{{ route('admin.admins.destroy', $admin) }}"
-                          method="POST"
-                          id="btnDelete{{ $admin->id }}"
-                          class="d-inline">
+                <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>#</th>
+                        <th>{{ __('dashboard.id') }}</th>
+                        <th>{{ __('dashboard.Name') }}</th>
+                        <th>{{ __('dashboard.Email') }}</th>
+                        <th>{{ __('dashboard.Role') }}</th>
+                        <th>{{ __('dashboard.Image') }}</th>
+                        <th>{{ __('dashboard.Actions') }}</th>
+                    </tr>
+                    </thead>
 
-                        @csrf
-                        @method('DELETE')
+                    <tbody id="adminTableBody">
+                    @foreach($admins as $admin)
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="row-checkbox" value="{{ $admin->id }}">
+                            </td>
 
-                        <button type="button"
-                                onclick="confirmDelete({{ $admin->id }})"
-                                class="btn btn-link p-0 border-0">
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $admin->id }}</td>
+                            <td>{{ $admin->name }}</td>
+                            <td>{{ $admin->email }}</td>
 
-                            <i class="fe fe-trash text-danger"></i>
+                            <td>
+                                @foreach($admin->roles as $role)
+                                    <span class="badge badge-success">
+                            {{ ucfirst(str_replace('-', ' ', $role->name)) }}
+                        </span>
+                                @endforeach
+                            </td>
 
-                        </button>
+                            <td>
+                                @if($admin->avatar)
+                                    <img src="{{ asset($admin->avatar) }}"
+                                         alt="Avatar"
+                                         width="50"
+                                         height="50">
+                                @else
+                                    -
+                                @endif
+                            </td>
 
-                    </form>
-                </td>
-                </tr>
-                @endforeach
-                </tbody>
+                            <td>
+                                <a href="{{ route('admin.admins.edit', $admin->id) }}"
+                                   style="text-decoration: none;">
+                                    <i class="fe fe-edit text-warning"></i>
+                                </a>
+
+                                <form action="{{ route('admin.admins.destroy', $admin) }}"
+                                      method="POST"
+                                      id="btnDelete{{ $admin->id }}"
+                                      class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button type="button"
+                                            onclick="confirmDelete({{ $admin->id }})"
+                                            class="btn btn-link p-0 border-0">
+                                        <i class="fe fe-trash text-danger"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
                 </table>
+
 
             </div> <!-- simple table -->
         </div>

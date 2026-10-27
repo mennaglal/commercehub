@@ -7,10 +7,21 @@ use App\Models\Country;
 use App\Models\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Validation\Rule;
 
-class CountryController extends Controller
+class CountryController extends Controller implements  HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:countries.view', only: ['index']),
+            new Middleware('permission:countries.create', only: ['create', 'store']),
+            new Middleware('permission:countries.update', only: ['edit', 'update']),
+            new Middleware('permission:countries.delete', only: ['destroy']),
+        ];
+    }
     public function index(Request $request)
     {
         $countries = Country::with('currency')

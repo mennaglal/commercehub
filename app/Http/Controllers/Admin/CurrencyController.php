@@ -6,10 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Currency;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Validation\Rule;
 
-class CurrencyController extends Controller
+class CurrencyController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:currencies.view', only: ['index']),
+            new Middleware('permission:currencies.create', only: ['create', 'store']),
+            new Middleware('permission:currencies.update', only: ['edit', 'update']),
+            new Middleware('permission:currencies.delete', only: ['destroy']),
+        ];
+    }
     public function index(Request $request)
     {
         $currencies = Currency::query()

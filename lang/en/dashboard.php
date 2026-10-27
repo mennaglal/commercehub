@@ -345,5 +345,6 @@ return [
     'input_type' => 'Attribute Type',
     'text_type' => 'Text Value',
     'color_type' => 'Color',
+    'Leave password blank if you do not want to change it'=>'Leave password blank if you do not want to change it',
 
 ];

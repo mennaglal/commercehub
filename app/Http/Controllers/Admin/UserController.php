@@ -3,18 +3,35 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CustomerRequest;
 use App\Models\Area;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\User;
+use App\Services\ImageUploader;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-
-class UserController extends Controller
+use Throwable;
+class UserController extends Controller implements HasMiddleware
 {
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:users.view', only: ['index']),
+            new Middleware('permission:users.create', only: ['create', 'store']),
+            new Middleware('permission:users.update', only: ['edit', 'update']),
+            new Middleware('permission:users.delete', only: ['destroy']),
+            new Middleware('permission:users.block', only: ['block']),
+            new Middleware('permission:users.unblock', only: ['unblock']),
+        ];
+    }
+    public function __construct(private ImageUploader $images) {}
     private function customersQuery()
     {
         return User::role('customer')
@@ -27,29 +44,6 @@ class UserController extends Controller
             'countries' => Country::orderBy('name_en')->get(),
             'cities' => City::orderBy('name_en')->get(),
             'areas' => Area::orderBy('name_en')->get(),
-        ];
-    }
-
-    private function locationRules(Request $request): array
-    {
-        return [
-            'country_id' => [
-                'nullable',
-                'integer',
-                'exists:countries,id',
-            ],
-            'city_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('cities', 'id')
-                    ->where('country_id', $request->input('country_id')),
-            ],
-            'area_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('areas', 'id')
-                    ->where('city_id', $request->input('city_id')),
-            ],
         ];
     }
 
@@ -80,47 +74,30 @@ class UserController extends Controller
         );
     }
 
-    public function store(Request $request)
+    public function store(CustomerRequest $request)
     {
-        $data = $request->validate(array_merge([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ], $this->locationRules($request)));
+        $data = $request->validated();
 
-        $uploadPath = public_path('uploads/users');
+        $data['avatar'] = $request->hasFile('avatar')
+            ? $this->images->upload($request->file('avatar'), 'users')
+            : null;
 
-        if (!File::exists($uploadPath)) {
-            File::makeDirectory($uploadPath, 0755, true);
-        }
-
-        $avatarPath = null;
-
-        if ($request->hasFile('avatar')) {
-            $avatar = $request->file('avatar');
-            $avatarName = uniqid() . '_avatar.' . $avatar->getClientOriginalExtension();
-
-            $avatar->move($uploadPath, $avatarName);
-
-            $avatarPath = 'uploads/users/' . $avatarName;
-        }
-
-        $data['avatar'] = $avatarPath;
         $data['password'] = Hash::make($data['password']);
 
-        DB::transaction(function () use ($data) {
-            $user = User::create($data + ['status' => true]);
-
-            $user->assignRole('customer');
-        });
+        try {
+            DB::transaction(function () use ($data) {
+                $user = User::create($data + ['status' => true]);
+                $user->assignRole('customer');
+            });
+        } catch (Throwable $e) {
+            $this->images->delete($data['avatar']);
+            throw $e;
+        }
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', __('messages.user_created'));
     }
-
     public function edit(User $user)
     {
         abort_unless($user->hasRole('customer'), 404);
@@ -131,22 +108,11 @@ class UserController extends Controller
         );
     }
 
-    public function update(Request $request, User $user)
+    public function update(CustomerRequest $request, User $user)
     {
         abort_unless($user->hasRole('customer'), 404);
 
-        $data = $request->validate(array_merge([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')->ignore($user->id),
-            ],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ], $this->locationRules($request)));
+        $data = $request->validated();
 
         if (empty($data['password'])) {
             unset($data['password']);
@@ -154,48 +120,58 @@ class UserController extends Controller
             $data['password'] = Hash::make($data['password']);
         }
 
-        $uploadPath = public_path('uploads/users');
+        $oldAvatar = $user->avatar;
 
-        if (!File::exists($uploadPath)) {
-            File::makeDirectory($uploadPath, 0755, true);
+        $newAvatar = $request->hasFile('avatar')
+            ? $this->images->upload($request->file('avatar'), 'users')
+            : null;
+
+        if ($newAvatar) {
+            $data['avatar'] = $newAvatar;
+        } else {
+            unset($data['avatar']);
         }
 
-        if ($request->hasFile('avatar')) {
-            if ($user->avatar && File::exists(public_path($user->avatar))) {
-                File::delete(public_path($user->avatar));
-            }
-
-            $avatar = $request->file('avatar');
-            $avatarName = uniqid() . '_avatar.' . $avatar->getClientOriginalExtension();
-
-            $avatar->move($uploadPath, $avatarName);
-
-            $data['avatar'] = 'uploads/users/' . $avatarName;
+        try {
+            $user->update($data);
+        } catch (Throwable $e) {
+            $this->images->delete($newAvatar);
+            throw $e;
         }
 
-        $user->update($data);
+        if ($newAvatar) {
+            $this->images->delete($oldAvatar);
+        }
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', __('messages.user_updated'));
     }
-
     public function destroy(User $user)
     {
         abort_unless($user->hasRole('customer'), 404);
 
-        $user->delete();
+        $avatar = $user->avatar;
+
+        DB::transaction(function () use ($user) {
+            $user->tokens()->delete();
+            $user->delete();
+        });
+
+        $this->images->delete($avatar);
 
         return redirect()
             ->route('admin.users.index')
             ->with('success', __('messages.user_deleted'));
     }
-
     public function block(User $user)
     {
         abort_unless($user->hasRole('customer'), 404);
 
-        $user->update(['status' => false]);
+        DB::transaction(function () use ($user) {
+            $user->update(['status' => false]);
+            $user->tokens()->delete();
+        });
 
         return back()->with('success', __('messages.user_blocked'));
     }

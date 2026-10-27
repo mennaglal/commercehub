@@ -37,7 +37,6 @@
                             <th>#</th>
                             <th>{{ __('dashboard.users_vendors.vendor_name') }}</th>
                             <th>{{ __('dashboard.users_vendors.email') }}</th>
-                            <th>{{ __('dashboard.users_vendors.store_name') }}</th>
                             <th>{{ __('dashboard.users_vendors.approval_status') }}</th>
                             <th>{{ __('dashboard.users_vendors.store_status') }}</th>
                             <th>{{ __('dashboard.Country') }}</th>
@@ -61,7 +60,6 @@
                                 <td>{{ $vendors->firstItem() + $loop->index }}</td>
                                 <td>{{ $vendor->name }}</td>
                                 <td>{{ $vendor->email }}</td>
-                                <td>{{ $vendor->store?->name ?? __('dashboard.users_vendors.not_available') }}</td>
 
                                 <td>
                                     @if(!$vendor->store)

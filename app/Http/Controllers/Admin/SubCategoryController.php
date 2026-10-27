@@ -5,13 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Throwable;
 
-class SubCategoryController extends Controller
+class SubCategoryController extends Controller implements  HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:categories.view', only: ['index']),
+            new Middleware('permission:categories.create', only: ['create', 'store']),
+            new Middleware('permission:categories.update', only: ['edit', 'update']),
+            new Middleware('permission:categories.delete', only: ['destroy']),
+        ];
+    }
     public function index(Request $request)
     {
         $subCategories = Category::whereNotNull('parent_id')
