@@ -20,24 +20,29 @@
                 </div>
 
                 {{-- Search --}}
-                <form method="GET" action="{{ route('admin.areas.index') }}" class="form-inline mb-3">
+                <form
+                    method="GET"
+                    action="{{ route('admin.areas.index') }}"
+                    class="d-flex align-items-center flex-wrap mb-3"
+                    style="gap: 10px;"
+                >
                     <input
                         type="text"
                         name="search"
-                        class="form-control mr-2 mb-2"
+                        class="form-control"
+                        style="max-width: 300px;"
                         value="{{ request('search') }}"
                         placeholder="{{ __('dashboard.Search...') }}"
                     >
 
-                    <button type="submit" class="btn btn-primary mr-2 mb-2">
+                    <button type="submit" class="btn btn-primary">
                         {{ __('dashboard.Search') }}
                     </button>
 
-                    <a href="{{ route('admin.areas.index') }}" class="btn btn-secondary mb-2">
+                    <a href="{{ route('admin.areas.index') }}" class="btn btn-secondary">
                         {{ __('dashboard.Reset') }}
                     </a>
                 </form>
-
                 {{-- Bulk Delete Form --}}
                 <form
                     id="bulkDeleteAreasForm"
@@ -45,7 +50,7 @@
                     action="{{ route('admin.bulk.delete') }}"
                 >
                     @csrf
-                    <input type="hidden" name="model" value="Area">
+                    <input type="hidden" name="model" value="areas">
                     <input type="hidden" name="ids" id="selectedAreaIds">
                 </form>
 

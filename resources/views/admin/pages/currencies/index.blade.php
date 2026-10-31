@@ -46,7 +46,7 @@
                     action="{{ route('admin.bulk.delete') }}"
                 >
                     @csrf
-                    <input type="hidden" name="model" value="Currency">
+                    <input type="hidden" name="model" value="currencies">
                     <input type="hidden" name="ids" id="selectedCurrencyIds">
                 </form>
 

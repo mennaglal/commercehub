@@ -234,6 +234,31 @@
         .badge{
             color: #ffffff;
         }
+
+        .category-checkbox-card {
+            cursor: pointer;
+            background-color: #fff;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .category-checkbox-card:hover {
+            border-color: var(--primary-color) !important;
+        }
+
+        .category-checkbox-card:has(.category-checkbox:checked) {
+            border-color: var(--primary-color) !important;
+            background-color: rgba(var(--primary-color), 0.06);
+        }
+
+        .category-checkbox-card .form-check-input {
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .category-checkbox-card span {
+            overflow-wrap: anywhere;
+        }
+
     </style>
     @yield('style')
 </head>

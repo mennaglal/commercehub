@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ProductVariant extends Model
 {
+    // "status" is not fillable on purpose: the admin form does not edit it,
+    // so a new variant gets the DB default (active) and an existing one keeps its value.
     protected $fillable = [
         'product_id',
         'sku',
         'price',
         'discount_price',
         'quantity',
-        'status',
     ];
 
     protected function casts(): array
@@ -32,20 +33,16 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
+    // The option values of this variant, e.g. [Red, M].
     public function values(): BelongsToMany
     {
-        return $this->belongsToMany(
-            VariantValue::class,
-            'product_variant_values'
-        )->withTimestamps();
+        return $this->belongsToMany(VariantValue::class, 'product_variant_values')
+            ->withTimestamps();
     }
 
-    public function productVariants()
+    // Price the customer pays for this variant.
+    public function getFinalPriceAttribute(): string
     {
-        return $this->belongsToMany(
-            ProductVariant::class,
-            'product_variant_values'
-        )->withTimestamps();
+        return $this->discount_price ?? $this->price;
     }
-
 }

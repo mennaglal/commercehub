@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CategoryRequest;
 use App\Models\Category;
+use App\Models\Product;
+use App\Services\ImageUploader;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Throwable;
 
 class CategoryController extends Controller implements HasMiddleware
@@ -23,6 +23,9 @@ class CategoryController extends Controller implements HasMiddleware
             new Middleware('permission:categories.delete', only: ['destroy']),
         ];
     }
+
+    public function __construct(private ImageUploader $images) {}
+
     public function index(Request $request)
     {
         $categories = Category::whereNull('parent_id')
@@ -48,43 +51,24 @@ class CategoryController extends Controller implements HasMiddleware
         return view('admin.pages.categories.create');
     }
 
-    public function store(Request $request)
+    public function store(CategoryRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'name_ar' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:categories,slug',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
+        $data = $request->validated();
 
-        $slug = filled($validated['slug'] ?? null)
-            ? $validated['slug']
-            : Str::slug($validated['name']);
-
-        if ($slug === '') {
-            return back()->withInput()->withErrors([
-                'slug' => 'Please enter a valid English slug.',
-            ]);
-        }
-
-        if (Category::where('slug', $slug)->exists()) {
-            return back()->withInput()->withErrors([
-                'slug' => __('dashboard.This slug already exists.'),
-                ]);
-        }
-
-        $imagePath = $this->uploadImage($request);
+        $imagePath = $request->hasFile('image')
+            ? $this->images->upload($request->file('image'), 'categories')
+            : null;
 
         try {
             Category::create([
-                'name' => $validated['name'],
-                'name_ar' => $validated['name_ar'],
-                'slug' => $slug,
+                'name' => $data['name'],
+                'name_ar' => $data['name_ar'],
+                'slug' => $data['slug'],
                 'parent_id' => null,
                 'image' => $imagePath,
             ]);
         } catch (Throwable $exception) {
-            $this->deleteImage($imagePath);
+            $this->images->delete($imagePath);
 
             throw $exception;
         }
@@ -101,50 +85,32 @@ class CategoryController extends Controller implements HasMiddleware
         return view('admin.pages.categories.edit', compact('category'));
     }
 
-    public function update(Request $request, Category $category)
+    public function update(CategoryRequest $request, Category $category)
     {
         abort_if($category->parent_id !== null, 404);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'name_ar' => 'required|string|max:255',
-            'slug' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('categories', 'slug')->ignore($category->id),
-            ],
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ]);
-
-        $slug = filled($validated['slug'] ?? null)
-            ? $validated['slug']
-            : Str::slug($validated['name']);
-
-        if ($slug === '') {
-            return back()->withInput()->withErrors([
-                'slug' => __('dashboard.Please enter a valid English slug.'),
-                ]);
-        }
+        $data = $request->validated();
 
         $oldImagePath = $category->image;
-        $newImagePath = $this->uploadImage($request);
+        $newImagePath = $request->hasFile('image')
+            ? $this->images->upload($request->file('image'), 'categories')
+            : null;
 
         try {
             $category->update([
-                'name' => $validated['name'],
-                'name_ar' => $validated['name_ar'],
-                'slug' => $slug,
+                'name' => $data['name'],
+                'name_ar' => $data['name_ar'],
+                'slug' => $data['slug'],
                 'image' => $newImagePath ?? $oldImagePath,
             ]);
         } catch (Throwable $exception) {
-            $this->deleteImage($newImagePath);
+            $this->images->delete($newImagePath);
 
             throw $exception;
         }
 
         if ($newImagePath) {
-            $this->deleteImage($oldImagePath);
+            $this->images->delete($oldImagePath);
         }
 
         return redirect()
@@ -156,8 +122,14 @@ class CategoryController extends Controller implements HasMiddleware
     {
         abort_if($category->parent_id !== null, 404);
 
-        $imagePaths = Category::where('id', $category->id)
-            ->orWhere('parent_id', $category->id)
+        $categoryIds = $category->children()->pluck('id')->push($category->id);
+
+        // Deleting a category must never silently delete the products inside it.
+        if (Product::whereIn('category_id', $categoryIds)->exists()) {
+            return back()->with('error', __('messages.category_has_products'));
+        }
+
+        $imagePaths = Category::whereIn('id', $categoryIds)
             ->pluck('image')
             ->filter()
             ->all();
@@ -165,42 +137,11 @@ class CategoryController extends Controller implements HasMiddleware
         $category->delete();
 
         foreach ($imagePaths as $imagePath) {
-            $this->deleteImage($imagePath);
+            $this->images->delete($imagePath);
         }
 
         return redirect()
             ->route('admin.categories.index')
             ->with('success', __('messages.deleted_successfully'));
-    }
-
-    private function uploadImage(Request $request): ?string
-    {
-        if (!$request->hasFile('image')) {
-            return null;
-        }
-
-        $uploadPath = public_path('uploads/categories');
-
-        if (!File::exists($uploadPath)) {
-            File::makeDirectory($uploadPath, 0755, true);
-        }
-
-        $image = $request->file('image');
-        $imageName = Str::uuid() . '.' . $image->getClientOriginalExtension();
-
-        $image->move($uploadPath, $imageName);
-
-        return 'uploads/categories/' . $imageName;
-    }
-
-    private function deleteImage(?string $imagePath): void
-    {
-        if (
-            $imagePath &&
-            str_starts_with($imagePath, 'uploads/categories/') &&
-            File::exists(public_path($imagePath))
-        ) {
-            File::delete(public_path($imagePath));
-        }
     }
 }

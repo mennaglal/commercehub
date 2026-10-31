@@ -25,7 +25,7 @@
 
             <form id="vendorsBulkDeleteForm" method="POST" action="{{ route('admin.bulk.delete') }}">
                 @csrf
-                <input type="hidden" name="model" value="User">
+                <input type="hidden" name="model" value="vendors">
                 <input type="hidden" name="ids" id="vendorsSelectedIds">
             </form>
 

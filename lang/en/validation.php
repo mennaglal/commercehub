@@ -195,6 +195,87 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+
+        // Admin
+        'name' => 'name',
+        'email' => 'email address',
+        'password' => 'password',
+        'password_confirmation' => 'password confirmation',
+        'role' => 'role',
+        'avatar' => 'profile image',
+
+        // Areas
+        'name_ar' => 'Arabic name',
+        'name_en' => 'English name',
+        'city_id' => 'city',
+
+        // Contact
+        'phone' => 'phone number',
+        'status' => 'status',
+
+        // Categories
+        'slug' => 'slug',
+        'image' => 'image',
+
+        // Cities
+        'country_id' => 'country',
+
+        // Countries
+        'code' => 'country code',
+        'currency_id' => 'currency',
+
+        // Coupons
+        'type' => 'discount type',
+        'value' => 'discount value',
+        'max_discount' => 'maximum discount',
+        'min_order_amount' => 'minimum order amount',
+        'usage_limit' => 'usage limit',
+        'starts_at' => 'coupon start date',
+        'expires_at' => 'coupon expiration date',
+        'categories' => 'categories',
+        'categories.*' => 'category',
+        'blogger_id' => 'blogger',
+        'commission_type' => 'commission type',
+        'commission_value' => 'commission value',
+
+        // Currencies
+        'symbol' => 'currency symbol',
+        'decimal_places' => 'decimal places',
+        'rate_to_egp' => 'exchange rate against EGP',
+
+        // Products
+        'store_id' => 'store',
+        'sku' => 'product SKU',
+        'description_ar' => 'Arabic description',
+        'description_en' => 'English description',
+        'parent_category_id' => 'parent category',
+        'category_id' => 'subcategory',
+        'has_variants' => 'product variants option',
+        'price' => 'price',
+        'stock' => 'available stock',
+        'is_sale' => 'sale status',
+        'sale_price' => 'sale price',
+        'variants' => 'variants',
+        'variants.*.values' => 'variant values',
+        'variants.*.values.*' => 'variant value',
+        'variants.*.price' => 'variant price',
+        'variants.*.discount_price' => 'variant discount price',
+        'variants.*.quantity' => 'variant quantity',
+        'variants.*.sku' => 'variant SKU',
+
+        // Variant Types
+        'input_type' => 'input type',
+
+        // Variant Values
+        'value_ar' => 'Arabic value',
+        'value_en' => 'English value',
+        'color_code' => 'color code',
+
+        // Vendors / Stores
+        'description' => 'description',
+        'logo' => 'store logo',
+        'banner' => 'store banner',
+    ],
 
 ];

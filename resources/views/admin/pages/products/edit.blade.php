@@ -1,15 +1,14 @@
-
 @extends('admin.layouts.app')
 
-@section('title', 'Edit Product')
+@section('title', __('products.edit'))
 
 @section('content')
     <div class="container-fluid py-4">
         <div class="card shadow mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Edit Product</h5>
+                <h5 class="mb-0">{{ __('products.edit') }}</h5>
                 <a href="{{ route('admin.products.index') }}" class="btn btn-secondary btn-sm">
-                    Back to Products
+                    {{ __('products.back') }}
                 </a>
             </div>
 
@@ -23,22 +22,12 @@
                     @csrf
                     @method('PUT')
 
-                    @include('admin.pages.products._form', [
-                        'product' => $product,
-                        'stores' => $stores,
-                        'parentCategories' => $parentCategories,
-                        'categories' => $categories,
-                        'variantTypes' => $variantTypes,
-                    ])
+                    {{-- The included view already sees $product, $stores, $categories, $variantTypes... --}}
+                    @include('admin.pages.products._form')
 
                     <div class="d-flex gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">
-                            Update Product
-                        </button>
-
-                        <a href="{{ route('admin.products.index') }}" class="btn btn-light">
-                            Cancel
-                        </a>
+                        <button type="submit" class="btn btn-primary">{{ __('products.update') }}</button>
+                        <a href="{{ route('admin.products.index') }}" class="btn btn-light">{{ __('products.cancel') }}</a>
                     </div>
                 </form>
             </div>

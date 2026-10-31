@@ -1,80 +1,48 @@
+{{--
+    Shared by create and edit.
+    $product is null on create.
 
+    Variants UI idea:
+      - The checkboxes of option values are ONLY a helper (they have no "name", so they are not submitted).
+      - "Generate" builds one row per combination.
+      - Only the rows are submitted: variants[i][values][], price, discount_price, quantity, sku.
+        The server derives the option types from those values.
+--}}
 @php
-    $isEdit = isset($product) && $product !== null;
+    $isEdit = $product !== null;
 
-    $selectedParentId = old(
-        'parent_category_id',
-        $isEdit ? $product->category?->parent_id : ''
-    );
+    // Selected categories (old input wins after a validation error)
+    $selectedParentId = old('parent_category_id', $isEdit ? $product->category?->parent_id : '');
+    $selectedCategoryId = old('category_id', $isEdit ? $product->category_id : '');
 
-    $selectedCategoryId = old(
-        'category_id',
-        $isEdit ? $product->category_id : ''
-    );
+    // Variant rows shown when the page opens:
+    // old input after a validation error, otherwise the saved variants of the product.
+    $initialRows = old('variants', $isEdit
+        ? $product->variants->map(fn ($variant) => [
+            'values' => $variant->values->pluck('id')->map(fn ($id) => (string) $id)->all(),
+            'sku' => $variant->sku,
+            'price' => $variant->price,
+            'discount_price' => $variant->discount_price,
+            'quantity' => $variant->quantity,
+        ])->values()->all()
+        : []);
 
-    $selectedTypeIds = old(
-        'variant_types',
-        $isEdit ? $product->variantTypes->pluck('id')->all() : []
-    );
-
-    $initialVariants = old('variants');
-
-    if ($initialVariants === null) {
-        $initialVariants = $isEdit
-            ? $product->variants->map(function ($variant) {
-                return [
-                    'values' => $variant->values->pluck('id')->map(fn ($id) => (string) $id)->all(),
-                    'price' => $variant->price,
-                    'discount_price' => $variant->discount_price,
-                    'quantity' => $variant->quantity,
-                    'sku' => $variant->sku,
-                ];
-            })->values()->all()
-            : [];
-    }
-
-    $selectedValueIds = old('variant_values');
-
-    if ($selectedValueIds === null) {
-        $selectedValueIds = collect($initialVariants)
-            ->pluck('values')
-            ->flatten()
-            ->unique()
-            ->values()
-            ->all();
-
-        $selectedValueIds = collect($selectedValueIds)
-            ->groupBy(function ($valueId) use ($variantTypes) {
-                foreach ($variantTypes as $type) {
-                    if ($type->values->contains('id', (int) $valueId)) {
-                        return $type->id;
-                    }
-                }
-
-                return 0;
-            })
-            ->map(fn ($values) => $values->all())
-            ->all();
-    }
-
-    $selectedValueIds = collect($selectedValueIds)
-        ->flatten()
-        ->map(fn ($id) => (string) $id)
-        ->all();
+    $hasVariants = (bool) old('has_variants', $isEdit ? $product->has_variants : false);
 @endphp
 
 <div class="row">
+
+    {{-- ===================== Basic information ===================== --}}
     <div class="col-12">
-        <h5 class="mb-3">Basic Information</h5>
+        <h5 class="mb-3">{{ __('products.sections.basic') }}</h5>
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="store_id" class="form-label">Store <span class="text-danger">*</span></label>
+        <label for="store_id" class="form-label">{{ __('products.columns.store') }} <span class="text-danger">*</span></label>
         <select name="store_id" id="store_id" class="form-control @error('store_id') is-invalid @enderror" required>
-            <option value="">Select Store</option>
+            <option value="">{{ __('products.fields.select_store') }}</option>
             @foreach($stores as $store)
-                <option value="{{ $store->id }}"
-                    @selected(old('store_id', $product->store_id ?? '') == $store->id)>
+                <option value="{{ $store->id }}" @selected(old('store_id', $product?->store_id) == $store->id)>
                     {{ $store->name }}
                 </option>
             @endforeach
@@ -83,126 +51,97 @@
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="sku" class="form-label">SKU <span class="text-danger">*</span></label>
+        <label for="sku" class="form-label">{{ __('products.fields.sku') }} <span class="text-danger">*</span></label>
         <input type="text" name="sku" id="sku"
                class="form-control @error('sku') is-invalid @enderror"
-               value="{{ old('sku', $product->sku ?? '') }}" required>
+               value="{{ old('sku', $product?->sku) }}" required>
         @error('sku') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="name_ar" class="form-label">Product Name (Arabic) <span class="text-danger">*</span></label>
+        <label for="name_ar" class="form-label">{{ __('products.fields.name_ar') }} <span class="text-danger">*</span></label>
         <input type="text" name="name_ar" id="name_ar"
                class="form-control @error('name_ar') is-invalid @enderror"
-               value="{{ old('name_ar', $product->name_ar ?? '') }}" required>
+               value="{{ old('name_ar', $product?->name_ar) }}" required>
         @error('name_ar') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="name_en" class="form-label">Product Name (English) <span class="text-danger">*</span></label>
+        <label for="name_en" class="form-label">{{ __('products.fields.name_en') }} <span class="text-danger">*</span></label>
         <input type="text" name="name_en" id="name_en"
                class="form-control @error('name_en') is-invalid @enderror"
-               value="{{ old('name_en', $product->name_en ?? '') }}" required>
+               value="{{ old('name_en', $product?->name_en) }}" required>
         @error('name_en') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
-    <div class="col-md-6 mb-3">
-        <label for="slug" class="form-label">Slug</label>
-        <input type="text" name="slug" id="slug"
-               class="form-control @error('slug') is-invalid @enderror"
-               value="{{ old('slug', $product->slug ?? '') }}">
-        @error('slug') <div class="invalid-feedback">{{ $message }}</div> @enderror
-    </div>
 
+    {{-- ===================== Categories ===================== --}}
     <div class="col-12">
         <hr>
-        <h5 class="mb-3">Product Categories</h5>
+        <h5 class="mb-3">{{ __('products.sections.categories') }}</h5>
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="parent_category_id" class="form-label">
-            Main Category <span class="text-danger">*</span>
-        </label>
-
+        <label for="parent_category_id" class="form-label">{{ __('products.columns.main_category') }} <span class="text-danger">*</span></label>
         <select name="parent_category_id" id="parent_category_id"
                 class="form-control @error('parent_category_id') is-invalid @enderror" required>
-            <option value="">Select Main Category</option>
+            <option value="">{{ __('products.fields.select_main_category') }}</option>
             @foreach($parentCategories as $parentCategory)
                 <option value="{{ $parentCategory->id }}"
                     @selected((string) $selectedParentId === (string) $parentCategory->id)>
-                    {{ $parentCategory->name_en }} / {{ $parentCategory->name_ar }}
+                    {{ (app()->getLocale()=="ar") ? $parentCategory->name_ar :$parentCategory->name}}
                 </option>
             @endforeach
         </select>
-
         @error('parent_category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="category_id" class="form-label">
-            Subcategory <span class="text-danger">*</span>
-        </label>
-
+        <label for="category_id" class="form-label">{{ __('products.columns.subcategory') }} <span class="text-danger">*</span></label>
         <select name="category_id" id="category_id"
                 class="form-control @error('category_id') is-invalid @enderror" required>
-            <option value="">Select Subcategory</option>
+            <option value="">{{ __('products.fields.select_subcategory') }}</option>
             @foreach($categories as $category)
-                <option value="{{ $category->id }}"
-                        data-parent="{{ $category->parent_id }}"
+                {{-- data-parent is used by the JS below to show only the subcategories of the chosen main category --}}
+                <option value="{{ $category->id }}" data-parent="{{ $category->parent_id }}"
                     @selected((string) $selectedCategoryId === (string) $category->id)>
-                    {{ $category->name_en }} / {{ $category->name_ar }}
+                    {{ (app()->getLocale()=="ar") ? $category->name_ar :$category->name}}
                 </option>
             @endforeach
         </select>
-
         @error('category_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-        <small class="text-muted">Select a main category first to filter its subcategories.</small>
+        <small class="text-muted">{{ __('products.fields.category_hint') }}</small>
     </div>
 
+    {{-- ===================== Descriptions ===================== --}}
     <div class="col-12">
         <hr>
-        <h5 class="mb-3">Descriptions</h5>
+        <h5 class="mb-3">{{ __('products.sections.descriptions') }}</h5>
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="description_ar" class="form-label">Description (Arabic)</label>
+        <label for="description_ar" class="form-label">{{ __('products.fields.description_ar') }}</label>
         <textarea name="description_ar" id="description_ar" rows="4"
-                  class="form-control @error('description_ar') is-invalid @enderror">{{ old('description_ar', $product->description_ar ?? '') }}</textarea>
+                  class="form-control @error('description_ar') is-invalid @enderror">{{ old('description_ar', $product?->description_ar) }}</textarea>
         @error('description_ar') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="description_en" class="form-label">Description (English)</label>
+        <label for="description_en" class="form-label">{{ __('products.fields.description_en') }}</label>
         <textarea name="description_en" id="description_en" rows="4"
-                  class="form-control @error('description_en') is-invalid @enderror">{{ old('description_en', $product->description_en ?? '') }}</textarea>
+                  class="form-control @error('description_en') is-invalid @enderror">{{ old('description_en', $product?->description_en) }}</textarea>
         @error('description_en') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
+    {{-- ===================== Image and status ===================== --}}
     <div class="col-12">
         <hr>
-        <h5 class="mb-3">Pricing and Inventory</h5>
+        <h5 class="mb-3">{{ __('products.sections.image_status') }}</h5>
     </div>
 
-    <div class="col-md-4 mb-3">
-        <label for="price" class="form-label">Regular Price <span class="text-danger">*</span></label>
-        <input type="number" step="0.01" min="0" name="price" id="price"
-               class="form-control @error('price') is-invalid @enderror"
-               value="{{ old('price', $product->price ?? '') }}" required>
-        @error('price') <div class="invalid-feedback">{{ $message }}</div> @enderror
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <label for="stock" class="form-label">Stock <span class="text-danger">*</span></label>
-        <input type="number" min="0" name="stock" id="stock"
-               class="form-control @error('stock') is-invalid @enderror"
-               value="{{ old('stock', $product->stock ?? 0) }}" required>
-        @error('stock') <div class="invalid-feedback">{{ $message }}</div> @enderror
-        <small class="text-muted">When variants are added, stock is calculated from their quantities.</small>
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <label for="image" class="form-label">Product Image</label>
-        <input type="file" name="image" id="image"
+    <div class="col-md-6 mb-3">
+        <label for="image" class="form-label">{{ __('products.fields.image') }}<span class="text-danger">*</span></label>
+        <input type="file" name="image" id="image" @if(!$isEdit) required @endif
                class="form-control @error('image') is-invalid @enderror"
                accept=".jpg,.jpeg,.png,.webp">
         @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -215,79 +154,107 @@
         @endif
     </div>
 
-    <div class="col-12 mb-3">
-        <div class="form-check">
-            <input type="checkbox" name="is_sale" id="is_sale" value="1"
-                   class="form-check-input"
-                @checked(old('is_sale', $product->is_sale ?? false))>
-            <label for="is_sale" class="form-check-label">Enable Sale Price</label>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-3" id="sale_price_wrapper">
-        <label for="sale_price" class="form-label">Sale Price</label>
-        <input type="number" step="0.01" min="0" name="sale_price" id="sale_price"
-               class="form-control @error('sale_price') is-invalid @enderror"
-               value="{{ old('sale_price', $product->sale_price ?? '') }}">
-        @error('sale_price') <div class="invalid-feedback">{{ $message }}</div> @enderror
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <label for="status" class="form-label">Status</label>
+    <div class="col-md-6 mb-3">
+        <label for="status" class="form-label">{{ __('products.columns.status') }}</label>
         <select name="status" id="status" class="form-control">
-            <option value="1" @selected(old('status', $product->status ?? 1) == 1)>Active</option>
-            <option value="0" @selected((string) old('status', $product->status ?? 1) === '0')>Inactive</option>
+            <option value="1" @selected((int) old('status', $product?->status ?? 1) === 1)>{{ __('products.active') }}</option>
+            <option value="0" @selected((int) old('status', $product?->status ?? 1) === 0)>{{ __('products.inactive') }}</option>
         </select>
     </div>
 
+    {{-- ===================== Pricing and variants ===================== --}}
     <div class="col-12">
         <hr>
-        <h5 class="mb-2">Product Variants</h5>
-        <p class="text-muted">Choose variant types and values, then generate combinations.</p>
+        <h5 class="mb-3">{{ __('products.sections.pricing') }}</h5>
     </div>
 
-    @error('variant_types')
-    <div class="col-12"><div class="alert alert-danger">{{ $message }}</div></div>
-    @enderror
-
-    @error('variant_values')
-    <div class="col-12"><div class="alert alert-danger">{{ $message }}</div></div>
-    @enderror
-
     <div class="col-12 mb-3">
+        {{-- The hidden input sends 0 when the checkbox is unchecked (an unchecked checkbox sends nothing). --}}
+        <input type="hidden" name="has_variants" value="0">
+        <div class="form-check">
+            <input type="checkbox" name="has_variants" id="has_variants" value="1"
+                   class="form-check-input" @checked($hasVariants)>
+            <label for="has_variants" class="form-check-label fw-bold">
+                {{ __('products.variants.has_variants') }}
+            </label>
+        </div>
+        <small class="text-muted">
+            {{ __('products.variants.has_variants_hint') }}
+        </small>
+    </div>
+
+    {{-- Simple product: shown only when "has variants" is unchecked --}}
+    <div class="col-12" id="simple_pricing">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="price" class="form-label">{{ __('products.fields.regular_price') }} <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" min="0" name="price" id="price"
+                       class="form-control @error('price') is-invalid @enderror"
+                       value="{{ old('price', $product?->has_variants ? '' : $product?->price) }}" required>
+                @error('price') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="stock" class="form-label">{{ __('products.columns.stock') }} <span class="text-danger">*</span></label>
+                <input type="number" min="0" name="stock" id="stock"
+                       class="form-control @error('stock') is-invalid @enderror"
+                       value="{{ old('stock', $product?->has_variants ? '' : ($product?->stock ?? 0)) }}" required>
+                @error('stock') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="col-12 mb-3">
+                <div class="form-check">
+                    <input type="checkbox" name="is_sale" id="is_sale" value="1" class="form-check-input"
+                        @checked(old('is_sale', $product?->is_sale ?? false))>
+                    <label for="is_sale" class="form-check-label">{{ __('products.fields.enable_sale') }}</label>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3" id="sale_price_wrapper">
+                <label for="sale_price" class="form-label">{{ __('products.fields.sale_price') }}</label>
+                <input type="number" step="0.01" min="0" name="sale_price" id="sale_price"
+                       class="form-control @error('sale_price') is-invalid @enderror"
+                       value="{{ old('sale_price', $product?->sale_price) }}">
+                @error('sale_price') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+        </div>
+    </div>
+
+    {{-- Product with variants: shown only when "has variants" is checked --}}
+    <div class="col-12" id="variants_section">
+        <h6 class="mb-2">1. {{ __('products.variants.step1') }}</h6>
+        <p class="text-muted">{{ __('products.variants.step1_hint') }}</p>
+
+        @error('variants')
+        <div class="alert alert-danger">{{ $message }}</div>
+        @enderror
+
         @forelse($variantTypes as $variantType)
-            <div class="card mb-3">
-                <div class="card-header">
-                    <div class="form-check">
-                        <input type="checkbox"
-                               class="form-check-input variant-type-checkbox"
-                               id="variant_type_{{ $variantType->id }}"
-                               name="variant_types[]"
-                               value="{{ $variantType->id }}"
-                            @checked(in_array((string) $variantType->id, array_map('strval', $selectedTypeIds), true))>
-                        <label class="form-check-label fw-bold" for="variant_type_{{ $variantType->id }}">
-                            {{ $variantType->name_en }} / {{ $variantType->name_ar }}
-                        </label>
-                    </div>
+            {{-- One card per option type (Color, Size...) --}}
+            <div class="card mb-3 variant-type-card">
+                <div class="card-header fw-bold">
+                    {{ $variantType->name}}
                 </div>
 
                 <div class="card-body">
                     @if($variantType->values->isEmpty())
-                        <p class="text-muted mb-0">No active values for this type.</p>
+                        <p class="text-muted mb-0">{{ __('products.variants.no_values') }}</p>
                     @else
                         <div class="row">
                             @foreach($variantType->values as $value)
                                 <div class="col-md-3 col-sm-6 mb-2">
                                     <div class="form-check">
+                                        {{-- No "name": this checkbox only feeds the generator --}}
                                         <input type="checkbox"
                                                class="form-check-input variant-value-checkbox"
                                                id="variant_value_{{ $value->id }}"
-                                               data-type="{{ $variantType->id }}"
-                                               name="variant_values[{{ $variantType->id }}][]"
                                                value="{{ $value->id }}"
-                                            @checked(in_array((string) $value->id, $selectedValueIds, true))>
+                                               data-label="{{ $value->value }}">
                                         <label class="form-check-label" for="variant_value_{{ $value->id }}">
-                                            {{ $value->name_en }} / {{ $value->name_ar }}
+                                            @if($variantType->input_type === 'color' && $value->color_code)
+                                                <span style="display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid #ccc;background:{{ $value->color_code }}"></span>
+                                            @endif
+                                            {{ $value->value }}
                                         </label>
                                     </div>
                                 </div>
@@ -297,50 +264,62 @@
                 </div>
             </div>
         @empty
-            <div class="alert alert-info">No active variant types are available.</div>
+            <div class="alert alert-info">{{ __('products.variants.no_types') }}</div>
         @endforelse
-    </div>
 
-    <div class="col-12 mb-3">
-        <button type="button" id="generate_variants" class="btn btn-outline-primary">
-            Generate Variant Combinations
+        <h6 class="mt-4 mb-2">2. {{ __('products.variants.step2') }}</h6>
+
+        <button type="button" id="generate_variants" class="btn btn-outline-primary mb-3">
+            {{ __('products.variants.generate') }}
         </button>
-    </div>
 
-    <div class="col-12">
-        @error('variants')
-        <div class="alert alert-danger">{{ $message }}</div>
-        @enderror
-
+        {{-- Filled by JS --}}
         <div id="variants_container"></div>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const parentSelect = document.getElementById('parent_category_id');
-        const categorySelect = document.getElementById('category_id');
-        const saleCheckbox = document.getElementById('is_sale');
-        const saleWrapper = document.getElementById('sale_price_wrapper');
-        const salePriceInput = document.getElementById('sale_price');
-        const variantsContainer = document.getElementById('variants_container');
-        const generateButton = document.getElementById('generate_variants');
+        const $ = (id) => document.getElementById(id);
 
-        const initialVariants = @json($initialVariants);
-        const oldVariantTypes = @json(array_map('strval', $selectedTypeIds));
+        const parentSelect = $('parent_category_id');
+        const categorySelect = $('category_id');
+        const hasVariantsBox = $('has_variants');
+        const simplePricing = $('simple_pricing');
+        const variantsSection = $('variants_section');
+        const saleCheckbox = $('is_sale');
+        const saleWrapper = $('sale_price_wrapper');
+        const salePriceInput = $('sale_price');
+        const rowsContainer = $('variants_container');
 
-        function filterSubcategories(resetSelection = false) {
-            const parentId = parentSelect.value;
+        // Texts used by this script (from lang/xx/products.php, in the current language).
+        const t = @json(__('products.js'));
+
+        // Rows saved in the DB (or sent back after a validation error).
+        const initialRows = @json($initialRows);
+
+        // What the admin typed, remembered per combination so "Generate" never wipes it.
+        // Key = value ids joined with "-" (example: "3-7"), same idea as the server.
+        const typed = {};
+
+        const keyOf = (ids) => ids.map(Number).sort((a, b) => a - b).join('-');
+
+        initialRows.forEach(function (row) {
+            typed[keyOf(row.values)] = row;
+        });
+
+        /* ---------------- Categories ---------------- */
+
+        // Show only the subcategories that belong to the selected main category.
+        function filterSubcategories(resetSelection) {
             let selectedStillAvailable = false;
 
             Array.from(categorySelect.options).forEach(function (option, index) {
                 if (index === 0) {
-                    option.hidden = false;
-                    option.disabled = false;
-                    return;
+                    return; // keep the "Select Subcategory" option
                 }
 
-                const matches = option.dataset.parent === parentId;
+                const matches = option.dataset.parent === parentSelect.value;
                 option.hidden = !matches;
                 option.disabled = !matches;
 
@@ -354,8 +333,20 @@
             }
         }
 
+        /* ---------------- Simple product vs product with variants ---------------- */
+
+        // A disabled input is not submitted and is skipped by the browser validation.
+        // This is what makes the hidden part safe: hidden "required" inputs would
+        // otherwise block the form silently.
+        function setDisabled(box, disabled) {
+            box.querySelectorAll('input, select, textarea').forEach(function (element) {
+                element.disabled = disabled;
+            });
+        }
+
         function toggleSalePrice() {
             const enabled = saleCheckbox.checked;
+
             saleWrapper.style.display = enabled ? '' : 'none';
             salePriceInput.required = enabled;
 
@@ -364,30 +355,37 @@
             }
         }
 
-        function getSelectedTypes() {
-            return Array.from(document.querySelectorAll('.variant-type-checkbox:checked'))
-                .map(input => input.value);
+        function toggleMode() {
+            const withVariants = hasVariantsBox.checked;
+
+            simplePricing.style.display = withVariants ? 'none' : '';
+            variantsSection.style.display = withVariants ? '' : 'none';
+
+            setDisabled(simplePricing, withVariants);
+            setDisabled(variantsSection, !withVariants);
+
+            if (!withVariants) {
+                toggleSalePrice();
+            }
         }
 
-        function getSelectedValuesByType() {
-            const selected = {};
+        /* ---------------- Variant rows ---------------- */
 
-            document.querySelectorAll('.variant-value-checkbox:checked').forEach(function (input) {
-                const typeId = input.dataset.type;
-
-                if (!selected[typeId]) {
-                    selected[typeId] = [];
-                }
-
-                selected[typeId].push({
-                    id: input.value,
-                    label: input.nextElementSibling.textContent.trim()
+        // Ticked values grouped by option type. Types with nothing ticked are skipped.
+        function selectedGroups() {
+            return Array.from(document.querySelectorAll('.variant-type-card'))
+                .map(function (card) {
+                    return Array.from(card.querySelectorAll('.variant-value-checkbox:checked'))
+                        .map(function (input) {
+                            return {id: input.value, label: input.dataset.label};
+                        });
+                })
+                .filter(function (group) {
+                    return group.length > 0;
                 });
-            });
-
-            return selected;
         }
 
+        // [[red, blue], [S, M]] => [[red, S], [red, M], [blue, S], [blue, M]]
         function makeCombinations(groups) {
             return groups.reduce(function (combinations, group) {
                 const result = [];
@@ -402,50 +400,55 @@
             }, [[]]);
         }
 
-        function renderVariants() {
-            const typeIds = getSelectedTypes();
-            const valuesByType = getSelectedValuesByType();
+        // Remember what is currently typed in the rows before drawing them again.
+        function rememberTypedValues() {
+            rowsContainer.querySelectorAll('[data-key]').forEach(function (card) {
+                typed[card.dataset.key] = {
+                    sku: card.querySelector('.v-sku').value,
+                    price: card.querySelector('.v-price').value,
+                    discount_price: card.querySelector('.v-discount').value,
+                    quantity: card.querySelector('.v-quantity').value,
+                };
+            });
+        }
 
-            if (typeIds.length === 0) {
-                variantsContainer.innerHTML = '<div class="alert alert-info">Select at least one variant type.</div>';
+        function renderRows() {
+            rememberTypedValues();
+
+            const groups = selectedGroups();
+
+            if (groups.length === 0) {
+                rowsContainer.innerHTML = '<div class="alert alert-info">' + t.pick_one + '</div>';
                 return;
             }
 
-            const groups = [];
+            rowsContainer.innerHTML = '';
 
-            for (const typeId of typeIds) {
-                if (!valuesByType[typeId] || valuesByType[typeId].length === 0) {
-                    variantsContainer.innerHTML = '<div class="alert alert-warning">Select at least one value for every selected variant type.</div>';
-                    return;
-                }
-
-                groups.push(valuesByType[typeId]);
-            }
-
-            const combinations = makeCombinations(groups);
-            const existingByKey = {};
-
-            initialVariants.forEach(function (variant) {
-                const key = (variant.values || []).map(String).sort().join('-');
-                existingByKey[key] = variant;
-            });
-
-            variantsContainer.innerHTML = '';
-
-            combinations.forEach(function (combination, index) {
-                const ids = combination.map(item => String(item.id)).sort();
-                const key = ids.join('-');
-                const existing = existingByKey[key] || {};
-                const labels = combination.map(item => item.label).join(' + ');
+            makeCombinations(groups).forEach(function (combination, index) {
+                const key = keyOf(combination.map(item => item.id));
+                const saved = typed[key] || {};
 
                 const card = document.createElement('div');
                 card.className = 'card mb-3';
+                card.dataset.key = key;
 
+                // Header: "Red / أحمر + M" and a remove button
                 const header = document.createElement('div');
-                header.className = 'card-header fw-bold';
-                header.textContent = labels;
+                header.className = 'card-header d-flex justify-content-between align-items-center';
+
+                const title = document.createElement('strong');
+                title.textContent = combination.map(item => item.label).join(' + ');
+                header.appendChild(title);
+
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'btn btn-sm btn-outline-danger remove-variant';
+                removeButton.textContent = t.remove;
+                header.appendChild(removeButton);
+
                 card.appendChild(header);
 
+                // Body: the value ids (hidden) + the editable fields
                 const body = document.createElement('div');
                 body.className = 'card-body row';
 
@@ -458,58 +461,76 @@
                 });
 
                 body.insertAdjacentHTML('beforeend', `
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">SKU</label>
-                    <input type="text" name="variants[${index}][sku]" class="form-control">
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Price <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" min="0" name="variants[${index}][price]" class="form-control" required>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Discount Price</label>
-                    <input type="number" step="0.01" min="0" name="variants[${index}][discount_price]" class="form-control">
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Quantity <span class="text-danger">*</span></label>
-                    <input type="number" min="0" name="variants[${index}][quantity]" class="form-control" required>
-                </div>
-            `);
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">${t.sku}</label>
+                        <input type="text" name="variants[${index}][sku]" class="form-control v-sku">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">${t.price} <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" min="0" name="variants[${index}][price]" class="form-control v-price" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">${t.discount_price}</label>
+                        <input type="number" step="0.01" min="0" name="variants[${index}][discount_price]" class="form-control v-discount">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">${t.quantity} <span class="text-danger">*</span></label>
+                        <input type="number" min="0" name="variants[${index}][quantity]" class="form-control v-quantity" required>
+                    </div>
+                `);
 
-                body.querySelector(`[name="variants[${index}][sku]"]`).value = existing.sku || '';
-                body.querySelector(`[name="variants[${index}][price]"]`).value = existing.price ?? '';
-                body.querySelector(`[name="variants[${index}][discount_price]"]`).value = existing.discount_price ?? '';
-                body.querySelector(`[name="variants[${index}][quantity]"]`).value = existing.quantity ?? 0;
+                // Values are set from JS (not inside the HTML string) so quotes in a SKU cannot break the markup.
+                body.querySelector('.v-sku').value = saved.sku ?? '';
+                body.querySelector('.v-price').value = saved.price ?? '';
+                body.querySelector('.v-discount').value = saved.discount_price ?? '';
+                body.querySelector('.v-quantity').value = saved.quantity ?? 0;
 
                 card.appendChild(body);
-                variantsContainer.appendChild(card);
+                rowsContainer.appendChild(card);
             });
         }
+
+        /* ---------------- Events ---------------- */
 
         parentSelect.addEventListener('change', function () {
             filterSubcategories(true);
         });
 
         saleCheckbox.addEventListener('change', toggleSalePrice);
+        hasVariantsBox.addEventListener('change', toggleMode);
+        $('generate_variants').addEventListener('click', renderRows);
 
-        document.querySelectorAll('.variant-type-checkbox').forEach(function (checkbox) {
-            checkbox.addEventListener('change', function () {
-                if (!checkbox.checked) {
-                    document.querySelectorAll(`.variant-value-checkbox[data-type="${checkbox.value}"]`)
-                        .forEach(input => input.checked = false);
-                }
-            });
+        // Remove one combination you do not sell (example: Red + XL).
+        // Generating again brings it back, because the ticked values still include it.
+        rowsContainer.addEventListener('click', function (event) {
+            if (!event.target.classList.contains('remove-variant')) {
+                return;
+            }
+
+            const card = event.target.closest('[data-key]');
+            delete typed[card.dataset.key];
+            card.remove();
         });
 
-        generateButton.addEventListener('click', renderVariants);
+        /* ---------------- Start ---------------- */
+
+        // Tick the values used by the existing / old variants, then draw their rows.
+        // NOTE: a value that became inactive is not listed anymore, so a variant using it
+        // will not be drawn and is removed when the product is saved again.
+        const usedValueIds = new Set(initialRows.flatMap(row => row.values.map(String)));
+
+        document.querySelectorAll('.variant-value-checkbox').forEach(function (input) {
+            input.checked = usedValueIds.has(input.value);
+        });
 
         filterSubcategories(false);
         toggleSalePrice();
 
-        if (initialVariants.length > 0) {
-            renderVariants();
-        } else if (oldVariantTypes.length > 0) {
-            renderVariants();
+        if (initialRows.length > 0) {
+            renderRows();
         }
+
+        // Last on purpose: it disables the inputs of the hidden part (including the rows just drawn).
+        toggleMode();
     });
 </script>

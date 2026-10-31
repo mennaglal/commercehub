@@ -155,7 +155,60 @@
                         ],
                     ],
                 ],
-
+                [
+                    'id' => 'orders',
+                    'icon' => 'fe fe-shopping-cart',
+                    'label' => __('dashboard.Orders'),
+                    'permission' => 'orders.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.orders.index',
+                            'text' => __('dashboard.Show-Orders'),
+                            'permission' => 'orders.view',
+                        ],
+                        [
+                            'route' => 'admin.orders.create',
+                            'text' => __('dashboard.Add-Order'),
+                            'permission' => 'orders.create',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'coupons',
+                    'icon' => 'fe fe-tag',
+                    'label' => __('dashboard.Coupons'),
+                    'permission' => 'coupons.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.coupons.index',
+                            'text' => __('dashboard.Show-Coupons'),
+                            'permission' => 'coupons.view',
+                        ],
+                        [
+                            'route' => 'admin.coupons.create',
+                            'text' => __('dashboard.Add-Coupon'),
+                            'permission' => 'coupons.create',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'bloggers',
+                    'icon' => 'fe fe-star',
+                    'label' => __('dashboard.Bloggers'),
+                    'permission' => 'bloggers.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.bloggers.index',
+                            'text' => __('dashboard.Show-Bloggers'),
+                            'permission' => 'bloggers.view',
+                        ],
+                        [
+                            'route' => 'admin.bloggers.create',
+                            'text' => __('dashboard.Add-Blogger'),
+                            'permission' => 'bloggers.create',
+                        ],
+                    ],
+                ],
                 [
                     'id' => 'currencies',
                     'icon' => 'fe fe-dollar-sign',

@@ -1,15 +1,14 @@
-
 @extends('admin.layouts.app')
 
-@section('title', 'Add Product')
+@section('title', __('products.add'))
 
 @section('content')
     <div class="container-fluid py-4">
         <div class="card shadow mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Add New Product</h5>
+                <h5 class="mb-0">{{ __('products.add_new') }}</h5>
                 <a href="{{ route('admin.products.index') }}" class="btn btn-secondary btn-sm">
-                    Back to Products
+                    {{ __('products.back') }}
                 </a>
             </div>
 
@@ -22,22 +21,13 @@
                       enctype="multipart/form-data">
                     @csrf
 
-                    @include('admin.pages.products._form', [
-                        'product' => null,
-                        'stores' => $stores,
-                        'parentCategories' => $parentCategories,
-                        'categories' => $categories,
-                        'variantTypes' => $variantTypes,
-                    ])
+                    {{-- An included view already sees the variables of this view
+                         (stores, categories, variantTypes...), so only $product is passed. --}}
+                    @include('admin.pages.products._form', ['product' => null])
 
                     <div class="d-flex gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">
-                            Save Product
-                        </button>
-
-                        <a href="{{ route('admin.products.index') }}" class="btn btn-light">
-                            Cancel
-                        </a>
+                        <button type="submit" class="btn btn-primary">{{ __('products.save') }}</button>
+                        <a href="{{ route('admin.products.index') }}" class="btn btn-light">{{ __('products.cancel') }}</a>
                     </div>
                 </form>
             </div>

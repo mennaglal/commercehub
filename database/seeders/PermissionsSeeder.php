@@ -19,8 +19,6 @@ class PermissionsSeeder extends Seeder
             'vendors' => ['view', 'create', 'update', 'delete', 'approve', 'reject', 'suspend'],
             'categories' => ['view', 'create', 'update', 'delete'],
             'products' => ['view', 'create', 'update', 'delete', 'approve', 'feature'],
-            'orders' => ['view', 'update', 'refund'],
-            'coupons' => ['view', 'create', 'update', 'delete'],
             'notifications' => ['view', 'send'],
             'settings' => ['view', 'update'],
             'roles' => ['view', 'create', 'update', 'delete'],
@@ -31,6 +29,9 @@ class PermissionsSeeder extends Seeder
             'areas' => ['view', 'create', 'update', 'delete'],
             'variant-types' => ['view', 'create', 'update', 'delete'],
             'variant-values' => ['view', 'create', 'update', 'delete'],
+            'orders' => ['view', 'create', 'update', 'refund'],
+            'coupons' => ['view', 'create', 'update', 'delete'],
+            'bloggers' => ['view', 'create', 'update','delete'],
             ];
 
         foreach ($modules as $module => $actions) {

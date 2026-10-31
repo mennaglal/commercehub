@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\Auth\AdminLoginController;
+use App\Http\Controllers\Admin\BloggerController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -27,6 +28,7 @@ Route::middleware('guest')->group(function () {
         ->name('login');
 
     Route::post('/login', [AdminLoginController::class, 'login'])
+        ->middleware('throttle:5,1')
         ->name('login.submit');
 
 });
@@ -172,11 +174,27 @@ Route::middleware(['auth', 'role:super-admin|admin|moderator|support'])->group(f
     )->name('variant-types.values.destroy');
 
 
+    // Must be declared BEFORE the resource: otherwise DELETE products/bulk-delete would match products/{product}.
+    Route::delete('products/bulk-delete', [ProductController::class, 'bulkDestroy'])
+        ->name('products.bulk-destroy');
+
     Route::resource('products',ProductController::class);
 
-    Route::resource('orders',OrderController::class);
+    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('orders/create', [OrderController::class, 'create'])->name('orders.create');
+    Route::post('orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+    Route::patch('orders/{order}/delivery', [OrderController::class, 'updateDelivery'])->name('orders.delivery');
+    Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment');
 
-    Route::resource('coupons',CouponController::class);
+    /* ---------------- Coupons ---------------- */
+    Route::resource('coupons', CouponController::class)->except(['show']);
+    Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])
+        ->name('coupons.destroy');
+
+    /* ---------------- Bloggers ---------------- */
+    Route::resource('bloggers', BloggerController::class);
 
     Route::resource('roles',RoleController::class);
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -13,33 +14,46 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
+use Throwable;
 
+/**
+ * The controller only SAVES data. All validation is in ProductRequest.
+ *
+ * Two kinds of products:
+ *  - simple product (has_variants = false): price / stock are on the product.
+ *  - product with variants (has_variants = true): price / stock are on the variants,
+ *    and the product keeps the lowest price and the total stock for listings.
+ */
 class ProductController extends Controller implements HasMiddleware
 {
+    // Page sizes offered in the products list (the second one is the default).
+    public const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100];
+
     public static function middleware(): array
     {
         return [
             new Middleware('permission:products.view', only: ['index', 'show']),
             new Middleware('permission:products.create', only: ['create', 'store']),
             new Middleware('permission:products.update', only: ['edit', 'update']),
-            new Middleware('permission:products.delete', only: ['destroy']),
+            new Middleware('permission:products.delete', only: ['destroy', 'bulkDestroy']),
         ];
     }
+
     public function index(Request $request)
     {
-        $products = Product::with([
-            'store',
-            'category.parent',
-            'variants',
-        ])
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $search = trim($request->search);
+        $search = trim((string) $request->input('search'));
 
+        // Rows per page: only these sizes are allowed.
+        $perPage = (int) $request->input('per_page');
+        $perPage = in_array($perPage, self::PER_PAGE_OPTIONS, true) ? $perPage : self::PER_PAGE_OPTIONS[1];
+
+        $products = Product::with(['store', 'category.parent'])
+            ->withCount('variants') // only the number is needed, not the rows
+            ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name_ar', 'like', "%{$search}%")
                         ->orWhere('name_en', 'like', "%{$search}%")
@@ -48,7 +62,7 @@ class ProductController extends Controller implements HasMiddleware
                 });
             })
             ->latest()
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('admin.pages.products.index', compact('products'));
@@ -56,72 +70,12 @@ class ProductController extends Controller implements HasMiddleware
 
     public function create()
     {
-        $stores = Store::orderBy('name')->get();
-
-        $parentCategories = Category::whereNull('parent_id')
-            ->orderBy('name')
-            ->get();
-
-        $categories = Category::whereNotNull('parent_id')
-            ->orderBy('name')
-            ->get();
-
-        $variantTypes = VariantType::with([
-            'values' => fn ($query) => $query
-                ->where('status', true)
-                ->orderBy('id'),
-        ])
-            ->where('status', true)
-            ->orderBy('name_en')
-            ->get();
-
-        return view('admin.pages.products.create', compact(
-            'stores',
-            'parentCategories',
-            'categories',
-            'variantTypes'
-        ));
+        return view('admin.pages.products.create', $this->formData());
     }
 
-    public function store(Request $request)
+    public function store(ProductRequest $request)
     {
-        $data = $this->validateProduct($request);
-
-        $imagePath = null;
-
-        try {
-            DB::transaction(function () use ($request, &$data, &$imagePath) {
-                $data['slug'] = $this->makeUniqueSlug(
-                    $data['slug'] ?? $data['name_en']
-                );
-
-                $data['name'] = $data['name_en'];
-                $data['description'] = $data['description_en'] ?? null;
-
-                if (!empty($data['variants'])) {
-                    $data['stock'] = collect($data['variants'])->sum('quantity');
-                }
-
-                if ($request->hasFile('image')) {
-                    $imagePath = $this->uploadImage($request->file('image'));
-                }
-
-                $data['image'] = $imagePath;
-                $data['status'] = $request->boolean('status');
-
-                $product = Product::create(
-                    $this->productAttributes($data)
-                );
-
-                $this->syncVariants($product, $data);
-            });
-        } catch (\Throwable $e) {
-            if ($imagePath) {
-                $this->deleteImage($imagePath);
-            }
-
-            throw $e;
-        }
+        $this->save($request, new Product());
 
         return redirect()
             ->route('admin.products.index')
@@ -135,90 +89,14 @@ class ProductController extends Controller implements HasMiddleware
 
     public function edit(string $id)
     {
-        $product = Product::with([
-            'category.parent',
-            'variants.values',
-            'variantTypes.values',
-        ])->findOrFail($id);
+        $product = Product::with(['category.parent', 'variants.values'])->findOrFail($id);
 
-        $stores = Store::orderBy('name')->get();
-
-        $parentCategories = Category::whereNull('parent_id')
-            ->orderBy('name')
-            ->get();
-
-        $categories = Category::whereNotNull('parent_id')
-            ->orderBy('name')
-            ->get();
-
-        $variantTypes = VariantType::with([
-            'values' => fn ($query) => $query
-                ->where('status', true)
-                ->orderBy('id'),
-        ])
-            ->where('status', true)
-            ->orderBy('name_en')
-            ->get();
-
-        return view('admin.pages.products.edit', compact(
-            'product',
-            'stores',
-            'parentCategories',
-            'categories',
-            'variantTypes'
-        ));
+        return view('admin.pages.products.edit', $this->formData() + ['product' => $product]);
     }
 
-    public function update(Request $request, string $id)
+    public function update(ProductRequest $request, string $id)
     {
-        $product = Product::findOrFail($id);
-
-        $data = $this->validateProduct($request, $product);
-
-        $oldImage = $product->image;
-        $newImage = null;
-
-        try {
-            DB::transaction(function () use (
-                $request,
-                $product,
-                &$data,
-                &$newImage
-            ) {
-                $data['slug'] = $this->makeUniqueSlug(
-                    $data['slug'] ?? $data['name_en'],
-                    $product->id
-                );
-
-                $data['name'] = $data['name_en'];
-                $data['description'] = $data['description_en'] ?? null;
-
-                if (!empty($data['variants'])) {
-                    $data['stock'] = collect($data['variants'])->sum('quantity');
-                }
-
-                if ($request->hasFile('image')) {
-                    $newImage = $this->uploadImage($request->file('image'));
-                    $data['image'] = $newImage;
-                }
-
-                $data['status'] = $request->boolean('status');
-
-                $product->update($this->productAttributes($data));
-
-                $this->syncVariants($product, $data);
-            });
-        } catch (\Throwable $e) {
-            if ($newImage) {
-                $this->deleteImage($newImage);
-            }
-
-            throw $e;
-        }
-
-        if ($newImage && $oldImage) {
-            $this->deleteImage($oldImage);
-        }
+        $this->save($request, Product::findOrFail($id));
 
         return redirect()
             ->route('admin.products.index')
@@ -227,17 +105,8 @@ class ProductController extends Controller implements HasMiddleware
 
     public function destroy(string $id)
     {
-        $product = Product::findOrFail($id);
-        $image = $product->image;
-
-        try {
-            $product->delete();
-        } catch (QueryException $e) {
-            return back()->with('error', __('messages.delete_failed'));
-        }
-
-        if ($image) {
-            $this->deleteImage($image);
+        if (! $this->deleteProduct(Product::findOrFail($id))) {
+            return back()->with('error', __('products.delete_failed'));
         }
 
         return redirect()
@@ -245,344 +114,199 @@ class ProductController extends Controller implements HasMiddleware
             ->with('success', __('messages.deleted_successfully'));
     }
 
-    private function validateProduct(
-        Request $request,
-        ?Product $product = null
-    ): array {
-        $data = $request->validate([
-            'store_id' => [
-                'required',
-                'integer',
-                'exists:stores,id',
-            ],
+    // Delete the products ticked in the list (ids[]).
+    // A product that cannot be deleted (for example it is used by an order) is skipped, not fatal.
+    public function bulkDestroy(Request $request)
+    {
+        $ids = collect((array) $request->input('ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->take(200); // safety limit per request
 
-            'parent_category_id' => [
-                'required',
-                'integer',
-                Rule::exists('categories', 'id')
-                    ->whereNull('parent_id'),
-            ],
+        // Keep the search and page size when going back to the list.
+        $listParams = $request->only(['search', 'per_page']);
 
-            'category_id' => [
-                'required',
-                'integer',
-                'exists:categories,id',
-            ],
-
-            'name_ar' => ['required', 'string', 'max:255'],
-            'name_en' => ['required', 'string', 'max:255'],
-
-            'slug' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('products', 'slug')->ignore($product?->id),
-            ],
-
-            'description_ar' => ['nullable', 'string'],
-            'description_en' => ['nullable', 'string'],
-
-            'price' => ['required', 'numeric', 'min:0'],
-
-            'is_sale' => ['nullable', 'boolean'],
-
-            'sale_price' => [
-                'nullable',
-                'required_if:is_sale,1',
-                'numeric',
-                'min:0',
-            ],
-
-            'stock' => ['required', 'integer', 'min:0'],
-
-            'sku' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('products', 'sku')->ignore($product?->id),
-            ],
-
-            'image' => [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:5120',
-            ],
-
-            'status' => ['nullable', 'boolean'],
-
-            'variant_types' => ['nullable', 'array'],
-            'variant_types.*' => [
-                'required',
-                'integer',
-                'distinct',
-                'exists:variant_types,id',
-            ],
-
-            'variant_values' => ['nullable', 'array'],
-            'variant_values.*' => ['array'],
-            'variant_values.*.*' => [
-                'required',
-                'integer',
-                'distinct',
-                'exists:variant_values,id',
-            ],
-
-            'variants' => ['nullable', 'array'],
-            'variants.*.values' => [
-                'required',
-                'array',
-                'min:1',
-            ],
-            'variants.*.values.*' => [
-                'required',
-                'integer',
-                'distinct',
-                'exists:variant_values,id',
-            ],
-            'variants.*.price' => [
-                'required',
-                'numeric',
-                'min:0',
-            ],
-            'variants.*.discount_price' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
-            'variants.*.quantity' => [
-                'required',
-                'integer',
-                'min:0',
-            ],
-            'variants.*.sku' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-        ]);
-
-        $subcategoryBelongsToParent = Category::whereKey($data['category_id'])
-            ->where('parent_id', $data['parent_category_id'])
-            ->exists();
-
-        if (!$subcategoryBelongsToParent) {
-            throw ValidationException::withMessages([
-                'category_id' => 'The selected subcategory does not belong to the selected main category.',
-            ]);
+        if ($ids->isEmpty()) {
+            return redirect()
+                ->route('admin.products.index', $listParams)
+                ->with('error', __('products.bulk.nothing_selected'));
         }
 
-        $data['is_sale'] = $request->boolean('is_sale');
+        $deleted = 0;
 
-        if ($data['is_sale']) {
-            if ((float) $data['sale_price'] > (float) $data['price']) {
-                throw ValidationException::withMessages([
-                    'sale_price' => 'Sale price cannot exceed the regular price.',
-                ]);
+        foreach (Product::whereIn('id', $ids)->get() as $product) {
+            if ($this->deleteProduct($product)) {
+                $deleted++;
             }
-        } else {
-            $data['sale_price'] = null;
         }
 
-        $data['variant_types'] = $data['variant_types'] ?? [];
-        $data['variant_values'] = $data['variant_values'] ?? [];
-        $data['variants'] = $data['variants'] ?? [];
-
-        return $data;
+        return redirect()
+            ->route('admin.products.index', $listParams)
+            ->with($deleted > 0 ? 'success' : 'error', __('products.bulk.result', [
+                'deleted' => $deleted,
+                'skipped' => $ids->count() - $deleted,
+            ]));
     }
 
-    private function productAttributes(array $data): array
-    {
-        unset(
-            $data['parent_category_id'],
-            $data['variant_types'],
-            $data['variant_values'],
-            $data['variants']
-        );
+    /* -----------------------------------------------------------------
+     | Helpers
+     |-----------------------------------------------------------------*/
 
-        return $data;
+    // Delete one product and its image. Returns false when the DB refuses (product in use).
+    private function deleteProduct(Product $product): bool
+    {
+        $image = $product->image;
+
+        try {
+            $product->delete(); // variants are removed by the DB cascade
+        } catch (QueryException $e) {
+            return false;
+        }
+
+        if ($image) {
+            $this->deleteImage($image);
+        }
+
+        return true;
     }
 
-    private function syncVariants(Product $product, array $data): void
+    // Lists needed by the create and edit forms (one place instead of two copies).
+    private function formData(): array
     {
-        $typeIds = collect($data['variant_types'])
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values();
+        return [
+            'stores' => Store::orderBy('name')->get(),
+            'parentCategories' => Category::whereNull('parent_id')->orderBy('name')->get(),
+            'categories' => Category::whereNotNull('parent_id')->orderBy('name')->get(),
+            // Only active types and values can be chosen for a product.
+            'variantTypes' => VariantType::with([
+                'values' => fn ($query) => $query->where('status', true)->orderBy('id'),
+            ])
+                ->where('status', true)
+                ->orderBy('name_en')
+                ->get(),
+        ];
+    }
 
-        $selectedValueIds = collect($data['variant_values'])
-            ->flatten()
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values();
+    // One method for create AND update: the only difference is the Product instance.
+    private function save(ProductRequest $request, Product $product): void
+    {
+        $data = $request->validated();
+        $hasVariants = $data['has_variants'];
 
-        if ($typeIds->isEmpty()) {
-            if (count($data['variants']) > 0) {
-                throw ValidationException::withMessages([
-                    'variant_types' => 'Select at least one variant type.',
-                ]);
+        $oldImage = $product->image;
+        $newImage = null;
+
+        try {
+            DB::transaction(function () use ($request, $product, $data, $hasVariants, &$newImage) {
+                // 1) Derived fields
+                $data['name'] = $data['name_en'];
+                $data['description'] = $data['description_en'] ?? null;
+                $data['slug'] = $this->makeUniqueSlug($data['slug'] ?? $data['name_en'], $product->id);
+
+                // validated() holds an UploadedFile here: replace it with the stored path,
+                // or drop it so the current image stays untouched.
+                unset($data['image']);
+
+                if ($request->hasFile('image')) {
+                    $newImage = $this->uploadImage($request->file('image'));
+                    $data['image'] = $newImage;
+                }
+
+                // A product with variants gets these values from its variants (step 3 below).
+                if ($hasVariants) {
+                    $data['price'] = 0;
+                    $data['stock'] = 0;
+                    $data['sale_price'] = null;
+                }
+
+                // 2) Save the product (Arr::only keeps only the real columns)
+                $product->fill(Arr::only($data, $product->getFillable()))->save();
+
+                // 3) Save the variants
+                $this->syncVariants($product, $hasVariants ? $data['variants'] : []);
+
+                // 4) Keep the lowest price and total stock on the product for listings
+                if ($hasVariants) {
+                    $product->update([
+                        'price' => $product->variants()->min('price'),
+                        'stock' => $product->variants()->sum('quantity'),
+                    ]);
+                }
+            });
+        } catch (Throwable $e) {
+            // The DB rolled back, so remove the image we just uploaded.
+            if ($newImage) {
+                $this->deleteImage($newImage);
             }
 
+            throw $e;
+        }
+
+        // Only after a successful save: remove the replaced image.
+        if ($newImage && $oldImage) {
+            $this->deleteImage($oldImage);
+        }
+    }
+
+    // Make the DB match the rows sent by the form.
+    // $rows = [] means a simple product.
+    private function syncVariants(Product $product, array $rows): void
+    {
+        if (empty($rows)) {
+            // NOTE: this is a hard delete. When orders start referencing variants,
+            // switch to SoftDeletes so old orders keep their history.
             $product->variants()->delete();
             $product->variantTypes()->detach();
 
             return;
         }
 
-        $actualTypeIds = VariantType::whereIn('id', $typeIds)
-            ->where('status', true)
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id);
+        // The option types come from the chosen values
+        // (the request already checked that every row uses the same types).
+        $valueIds = collect($rows)->pluck('values')->flatten()->unique();
+        $product->variantTypes()->sync(
+            VariantValue::whereIn('id', $valueIds)->pluck('variant_type_id')->unique()
+        );
 
-        if ($actualTypeIds->count() !== $typeIds->count()) {
-            throw ValidationException::withMessages([
-                'variant_types' => 'One or more selected variant types are invalid.',
-            ]);
-        }
-
-        $values = VariantValue::whereIn('id', $selectedValueIds)
-            ->where('status', true)
-            ->get();
-
-        if ($values->count() !== $selectedValueIds->count()) {
-            throw ValidationException::withMessages([
-                'variant_values' => 'One or more selected values are invalid.',
-            ]);
-        }
-
-        $valuesByType = $values->groupBy('variant_type_id');
-
-        foreach ($typeIds as $typeId) {
-            if ($valuesByType->get($typeId, collect())->isEmpty()) {
-                throw ValidationException::withMessages([
-                    'variant_values' => 'Select values for every selected variant type.',
-                ]);
-            }
-        }
-
-        foreach ($values as $value) {
-            if (!$typeIds->contains((int) $value->variant_type_id)) {
-                throw ValidationException::withMessages([
-                    'variant_values' => 'A selected value does not belong to the selected types.',
-                ]);
-            }
-        }
-
-        $product->variantTypes()->sync($typeIds->all());
-
-        $seenCombinations = [];
-
-        foreach ($data['variants'] as $index => $variantData) {
-            $variantValueIds = collect($variantData['values'])
-                ->map(fn ($id) => (int) $id)
-                ->sort()
-                ->values();
-
-            $combinationValues = $values->whereIn('id', $variantValueIds);
-
-            if (
-                $variantValueIds->count() !== $typeIds->count()
-                || $combinationValues->count() !== $typeIds->count()
-                || $combinationValues->pluck('variant_type_id')->unique()->count() !== $typeIds->count()
-                || $typeIds->diff(
-                    $combinationValues->pluck('variant_type_id')
-                        ->map(fn ($id) => (int) $id)
-                )->isNotEmpty()
-            ) {
-                throw ValidationException::withMessages([
-                    "variants.{$index}.values" => 'Each combination must contain exactly one value from every selected type.',
-                ]);
-            }
-
-            $combinationKey = $variantValueIds->implode('-');
-
-            if (isset($seenCombinations[$combinationKey])) {
-                throw ValidationException::withMessages([
-                    "variants.{$index}.values" => 'Duplicate variant combinations are not allowed.',
-                ]);
-            }
-
-            $seenCombinations[$combinationKey] = true;
-
-            $discount = $variantData['discount_price'] ?? null;
-
-            if ($discount !== null && (float) $discount > (float) $variantData['price']) {
-                throw ValidationException::withMessages([
-                    "variants.{$index}.discount_price" => 'Discount price cannot exceed the variant price.',
-                ]);
-            }
-        }
-
-        $existingVariants = $product->variants()
-            ->with('values')
-            ->get();
-
-        $existingByCombination = [];
-
-        foreach ($existingVariants as $existingVariant) {
-            $key = $existingVariant->values
-                ->pluck('id')
-                ->map(fn ($id) => (int) $id)
-                ->sort()
-                ->implode('-');
-
-            $existingByCombination[$key] = $existingVariant;
-        }
+        // Existing variants indexed by their combination ("3-7" = value ids 3 and 7),
+        // so editing a row updates it instead of deleting and recreating it.
+        $existing = $product->variants()->with('values')->get()
+            ->keyBy(fn ($variant) => $this->combinationKey($variant->values->pluck('id')));
 
         $keptIds = [];
 
-        foreach ($data['variants'] as $variantData) {
-            $key = collect($variantData['values'])
-                ->map(fn ($id) => (int) $id)
-                ->sort()
-                ->implode('-');
+        foreach ($rows as $row) {
+            $variant = $existing->get($this->combinationKey($row['values'])) ?? new ProductVariant();
 
-            $variant = $existingByCombination[$key] ?? new ProductVariant();
+            $variant->fill(Arr::only($row, ['sku', 'price', 'discount_price', 'quantity']));
+            $product->variants()->save($variant); // sets product_id and saves
 
-            $variant->fill([
-                'sku' => $variantData['sku'] ?? null,
-                'price' => $variantData['price'],
-                'discount_price' => $variantData['discount_price'] ?? null,
-                'quantity' => $variantData['quantity'],
-                'status' => true,
-            ]);
-
-            $product->variants()->save($variant);
-
-            $variant->values()->sync($variantData['values']);
+            $variant->values()->sync($row['values']);
 
             $keptIds[] = $variant->id;
         }
 
-        if (!empty($keptIds)) {
-            $product->variants()
-                ->whereNotIn('id', $keptIds)
-                ->delete();
-        } else {
-            $product->variants()->delete();
-        }
+        // Variants that are no longer in the form are removed.
+        $product->variants()->whereNotIn('id', $keptIds)->delete();
     }
 
-    private function makeUniqueSlug(
-        string $value,
-        ?int $ignoreId = null
-    ): string {
-        $base = Str::slug($value);
+    // [7, 3] and [3, 7] must give the same key: "3-7".
+    private function combinationKey(iterable $valueIds): string
+    {
+        return collect($valueIds)->map(fn ($id) => (int) $id)->sort()->implode('-');
+    }
 
-        if ($base === '') {
-            $base = 'product';
-        }
-
+    private function makeUniqueSlug(string $value, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($value) ?: 'product';
         $slug = $base;
         $counter = 1;
 
         while (
-        Product::where('slug', $slug)
-            ->when(
-                $ignoreId,
-                fn ($query) => $query->where('id', '!=', $ignoreId)
-            )
-            ->exists()
+            Product::where('slug', $slug)
+                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+                ->exists()
         ) {
             $slug = $base . '-' . $counter++;
         }
@@ -594,12 +318,11 @@ class ProductController extends Controller implements HasMiddleware
     {
         $directory = public_path('uploads/products');
 
-        if (!File::exists($directory)) {
+        if (! File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
 
         $filename = Str::uuid() . '.' . $file->extension();
-
         $file->move($directory, $filename);
 
         return 'uploads/products/' . $filename;
@@ -607,9 +330,14 @@ class ProductController extends Controller implements HasMiddleware
 
     private function deleteImage(string $path): void
     {
+        // Safety: only delete files inside uploads/products.
+        if (! str_starts_with($path, 'uploads/products/') || str_contains($path, '..')) {
+            return;
+        }
+
         $fullPath = public_path($path);
 
-        if (File::exists($fullPath)) {
+        if (is_file($fullPath)) {
             File::delete($fullPath);
         }
     }

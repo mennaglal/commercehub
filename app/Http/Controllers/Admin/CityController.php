@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CityRequest;
 use App\Models\City;
 use App\Models\Country;
-use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class CityController extends Controller implements HasMiddleware
-
 {
     public static function middleware(): array
     {
@@ -23,6 +22,7 @@ class CityController extends Controller implements HasMiddleware
             new Middleware('permission:cities.delete', only: ['destroy']),
         ];
     }
+
     public function index(Request $request)
     {
         $cities = City::with('country')
@@ -53,21 +53,9 @@ class CityController extends Controller implements HasMiddleware
         return view('admin.pages.cities.create', compact('countries'));
     }
 
-    public function store(Request $request)
+    public function store(CityRequest $request)
     {
-        $data = $request->validate([
-            'name_ar' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('cities', 'name_ar')
-                    ->where('country_id', $request->country_id),
-            ],
-            'name_en' => ['required', 'string', 'max:255'],
-            'country_id' => ['required', 'integer', 'exists:countries,id'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         City::create($data);
@@ -84,22 +72,9 @@ class CityController extends Controller implements HasMiddleware
         return view('admin.pages.cities.edit', compact('city', 'countries'));
     }
 
-    public function update(Request $request, City $city)
+    public function update(CityRequest $request, City $city)
     {
-        $data = $request->validate([
-            'name_ar' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('cities', 'name_ar')
-                    ->where('country_id', $request->country_id)
-                    ->ignore($city->id),
-            ],
-            'name_en' => ['required', 'string', 'max:255'],
-            'country_id' => ['required', 'integer', 'exists:countries,id'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         $city->update($data);

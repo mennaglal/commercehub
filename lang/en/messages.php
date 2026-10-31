@@ -46,6 +46,10 @@ return [
     'currency_in_use' => 'This currency cannot be deleted because it is being used.',
     'country_in_use' => 'This country cannot be deleted because it is being used.',
     'city_in_use' => 'This city cannot be deleted because it is being used.',
-
+    'category_has_products' => 'Cannot delete this category because it has products.',
+    'vendor_has_products' => 'Cannot delete this vendor because the store has products.',
+    'cannot_delete_base_currency' => 'The base currency EGP cannot be deleted.',
+    'bulk_deleted_count' => ':deleted deleted, :skipped skipped because they are in use or protected.',
+    'bulk_nothing_selected' => 'Nothing was selected.',
 
 ];

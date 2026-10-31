@@ -3,14 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+// An option type such as "Color" or "Size". Managed from the variant-types admin pages.
 class VariantType extends Model
 {
     protected $fillable = [
         'name_ar',
         'name_en',
-        'input_type',
+        'input_type', // 'text' or 'color'
         'status',
     ];
 
@@ -21,18 +23,24 @@ class VariantType extends Model
         ];
     }
 
+    protected $appends = ['name'];
 
-    public function values()
+    public function getNameAttribute(): string
+    {
+        return (app()->getLocale() == "ar")
+            ? $this->name_ar
+            : $this->name_en;
+    }
+
+    // The values that belong to this type, e.g. Red / Blue for Color.
+    public function values(): HasMany
     {
         return $this->hasMany(VariantValue::class);
     }
 
-    public function products()
+    public function products(): BelongsToMany
     {
-        return $this->belongsToMany(
-            Product::class,
-            'product_variant_types'
-        )->withTimestamps();
+        return $this->belongsToMany(Product::class, 'product_variant_types')
+            ->withTimestamps();
     }
-
 }

@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->string('name_ar')->nullable();
-            $table->string('name_en')->nullable();
+            $table->string('name_ar')->nullable()->after('name');
+            $table->string('name_en')->nullable()->after('name_ar');
 
             $table->text('description_ar')->nullable();
             $table->text('description_en')->nullable();

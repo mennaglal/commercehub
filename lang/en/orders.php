@@ -1,0 +1,140 @@
+<?php
+
+return [
+    'title' => 'Orders',
+    'add' => 'New order',
+    'details' => 'Order details',
+    'back' => 'Back to orders',
+    'save' => 'Save order',
+    'search' => 'Search by number, name or phone',
+    'filter' => 'Filter',
+    'empty' => 'No orders found.',
+    'all' => 'All',
+    'none' => '-',
+
+    'sections' => [
+        'customer' => 'Customer',
+        'items' => 'Items',
+        'summary' => 'Summary',
+        'payment' => 'Payment',
+        'delivery' => 'Delivery',
+        'coupon' => 'Coupon and blogger',
+    ],
+
+    'columns' => [
+        'number' => 'Order #',
+        'store' => 'Store',
+        'customer' => 'Customer',
+        'items' => 'Items',
+        'total' => 'Total',
+        'status' => 'Status',
+        'payment' => 'Payment',
+        'delivery' => 'Delivery',
+        'date' => 'Date',
+        'product' => 'Product',
+        'variant' => 'Variant',
+        'sku' => 'SKU',
+        'unit_price' => 'Unit price',
+        'quantity' => 'Qty',
+        'line_total' => 'Line total',
+    ],
+
+    'fields' => [
+        'customer_name' => 'Customer name',
+        'customer_phone' => 'Phone',
+        'shipping_address' => 'Shipping address',
+        'notes' => 'Notes',
+        'shipping_total' => 'Shipping cost',
+        'subtotal' => 'Subtotal',
+        'discount' => 'Discount',
+        'add_item' => 'Add item',
+        'update' => 'Update',
+        'view' => 'View',
+        'coupon_code' => 'Coupon code',
+        'coupon_hint' => 'Optional. The discount is calculated when the order is saved.',
+        'payment_method' => 'Payment method',
+        'payment_gateway' => 'Payment gateway',
+        'select_gateway' => 'Select gateway',
+        'payment_status' => 'Payment status',
+        'payment_id' => 'Payment ID',
+        'invoice_id' => 'Invoice ID',
+        'invoice_url' => 'Invoice link',
+        'open_invoice' => 'Open invoice',
+        'paid_at' => 'Paid at',
+        'delivery_status' => 'Delivery status',
+        'tracking_number' => 'Tracking number',
+        'shipped_at' => 'Shipped at',
+        'delivered_at' => 'Delivered at',
+        'blogger' => 'Blogger',
+        'commission' => 'Commission',
+        'commission_status' => 'Commission status',
+        'cancel_warning' => 'Cancelling gives the stock, the coupon use and the commission back and cannot be undone.',
+        'return_warning' => 'A returned order gives the stock back and cancels the commission. Continue?',
+        'confirm_first' => 'Confirm the order first to start the delivery.',
+        'final' => 'This status is final.',
+    ],
+
+    'payment_methods' => [
+        'cod' => 'Cash on delivery',
+        'online' => 'Online payment',
+        'bank_transfer' => 'Bank transfer',
+    ],
+
+    'statuses' => [
+        'pending' => 'Pending',
+        'confirmed' => 'Confirmed',
+        'cancelled' => 'Cancelled',
+    ],
+
+    'payment_statuses' => [
+        'pending' => 'Pending',
+        'paid' => 'Paid',
+        'failed' => 'Failed',
+        'refunded' => 'Refunded',
+    ],
+
+    'delivery_statuses' => [
+        'pending' => 'Not shipped',
+        'preparing' => 'Preparing',
+        'shipped' => 'Shipped',
+        'delivered' => 'Delivered',
+        'returned' => 'Returned',
+    ],
+
+    'commission_statuses' => [
+        'pending' => 'Pending',
+        'earned' => 'Earned',
+        'cancelled' => 'Cancelled',
+    ],
+
+    'messages' => [
+        'created' => 'Order created successfully.',
+        'status_updated' => 'Order status updated.',
+        'delivery_updated' => 'Delivery status updated.',
+        'payment_updated' => 'Payment details updated.',
+    ],
+
+    'errors' => [
+        'one_store' => 'All items in one order must belong to the same store.',
+        'product_unavailable' => 'One of the products is not available.',
+        'variant_required' => 'Please choose a variant for ":product".',
+        'variant_mismatch' => 'The selected variant does not belong to ":product".',
+        'not_enough_stock' => 'Not enough stock for ":product". Available: :available.',
+        'status_not_allowed' => 'This status change is not allowed.',
+        'cannot_cancel' => 'An order cannot be cancelled after it is shipped.',
+        'order_not_confirmed' => 'The order must be confirmed before changing the delivery status.',
+        'delivery_not_allowed' => 'This delivery status change is not allowed.',
+    ],
+
+    // Used by the JavaScript on the create page.
+    'js' => [
+        'product' => 'Product',
+        'variant' => 'Variant',
+        'quantity' => 'Qty',
+        'unit_price' => 'Unit price',
+        'line_total' => 'Line total',
+        'select_product' => 'Select product',
+        'select_variant' => 'Select variant',
+        'remove' => 'Remove',
+    ],
+];

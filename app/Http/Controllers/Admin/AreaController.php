@@ -3,14 +3,27 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AreaRequest;
 use App\Models\Area;
 use App\Models\City;
-use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class AreaController extends Controller
+class AreaController extends Controller implements HasMiddleware
 {
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:areas.view', only: ['index']),
+            new Middleware('permission:areas.create', only: ['create', 'store']),
+            new Middleware('permission:areas.update', only: ['edit', 'update']),
+            new Middleware('permission:areas.delete', only: ['destroy']),
+        ];
+    }
+
     public function index(Request $request)
     {
         $areas = Area::with('city.country')
@@ -46,21 +59,9 @@ class AreaController extends Controller
         return view('admin.pages.areas.create', compact('cities'));
     }
 
-    public function store(Request $request)
+    public function store(AreaRequest $request)
     {
-        $data = $request->validate([
-            'name_ar' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('areas', 'name_ar')
-                    ->where('city_id', $request->city_id),
-            ],
-            'name_en' => ['required', 'string', 'max:255'],
-            'city_id' => ['required', 'integer', 'exists:cities,id'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         Area::create($data);
@@ -79,22 +80,9 @@ class AreaController extends Controller
         return view('admin.pages.areas.edit', compact('area', 'cities'));
     }
 
-    public function update(Request $request, Area $area)
+    public function update(AreaRequest $request, Area $area)
     {
-        $data = $request->validate([
-            'name_ar' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('areas', 'name_ar')
-                    ->where('city_id', $request->city_id)
-                    ->ignore($area->id),
-            ],
-            'name_en' => ['required', 'string', 'max:255'],
-            'city_id' => ['required', 'integer', 'exists:cities,id'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         $area->update($data);

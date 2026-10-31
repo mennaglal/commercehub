@@ -4,9 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class SettingController extends Controller
+class SettingController extends Controller implements HasMiddleware
 {
+    // Protect the controller now, before any code is written inside it.
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:settings.view', only: ['index', 'show']),
+            new Middleware('permission:settings.update', only: ['create', 'store', 'edit', 'update', 'destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

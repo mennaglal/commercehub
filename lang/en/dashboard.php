@@ -346,5 +346,7 @@ return [
     'text_type' => 'Text Value',
     'color_type' => 'Color',
     'Leave password blank if you do not want to change it'=>'Leave password blank if you do not want to change it',
+    'select_all' => 'Select All',
+    'deselect_all' => 'Deselect All',
 
 ];

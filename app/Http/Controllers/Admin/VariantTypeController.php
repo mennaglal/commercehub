@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\VariantTypeRequest;
+use App\Http\Requests\Admin\VariantValueRequest;
 use App\Models\VariantType;
 use App\Models\VariantValue;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Validation\Rule;
@@ -37,14 +38,9 @@ class VariantTypeController extends Controller implements HasMiddleware
         return view('admin.pages.variant-types.create');
     }
 
-    public function store(Request $request)
+    public function store(VariantTypeRequest $request)
     {
-        $data = $request->validate([
-            'name_ar' => ['required', 'string', 'max:255'],
-            'name_en' => ['required', 'string', 'max:255'],
-            'input_type' => ['required', Rule::in(['text', 'color'])],
-            'status' => ['required', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         VariantType::create($data);
 
@@ -62,14 +58,9 @@ class VariantTypeController extends Controller implements HasMiddleware
         return view('admin.pages.variant-types.edit', compact('variantType'));
     }
 
-    public function update(Request $request, VariantType $variantType)
+    public function update(VariantTypeRequest $request, VariantType $variantType)
     {
-        $data = $request->validate([
-            'name_ar' => ['required', 'string', 'max:255'],
-            'name_en' => ['required', 'string', 'max:255'],
-            'input_type' => ['required', Rule::in(['text', 'color'])],
-            'status' => ['required', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         $variantType->update($data);
 
@@ -91,25 +82,9 @@ class VariantTypeController extends Controller implements HasMiddleware
             ->with('success', __('dashboard.variant_types.deleted'));
     }
 
-    public function storeValue(Request $request, VariantType $variantType)
+    public function storeValue(VariantValueRequest $request, VariantType $variantType)
     {
-        $rules = [
-            'value_ar' => ['required', 'string', 'max:255'],
-            'value_en' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('variant_values', 'value_en')
-                    ->where('variant_type_id', $variantType->id),
-            ],
-            'status' => ['required', 'boolean'],
-        ];
-
-        $rules['color_code'] = $variantType->input_type === 'color'
-            ? ['required', 'regex:/^#[0-9A-Fa-f]{6}$/']
-            : ['nullable', 'prohibited'];
-
-        $data = $request->validate($rules);
+        $data = $request->validated();
 
         if ($variantType->input_type !== 'color') {
             $data['color_code'] = null;
@@ -123,33 +98,13 @@ class VariantTypeController extends Controller implements HasMiddleware
     }
 
     public function updateValue(
-        Request $request,
+        VariantValueRequest $request,
         VariantType $variantType,
         VariantValue $variantValue
     ) {
-        abort_unless(
-            $variantValue->variant_type_id === $variantType->id,
-            404
-        );
+        abort_unless($variantValue->variant_type_id === $variantType->id, 404);
 
-        $rules = [
-            'value_ar' => ['required', 'string', 'max:255'],
-            'value_en' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('variant_values', 'value_en')
-                    ->where('variant_type_id', $variantType->id)
-                    ->ignore($variantValue->id),
-            ],
-            'status' => ['required', 'boolean'],
-        ];
-
-        $rules['color_code'] = $variantType->input_type === 'color'
-            ? ['required', 'regex:/^#[0-9A-Fa-f]{6}$/']
-            : ['nullable', 'prohibited'];
-
-        $data = $request->validate($rules);
+        $data = $request->validated();
 
         if ($variantType->input_type !== 'color') {
             $data['color_code'] = null;

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CurrencyRequest;
 use App\Models\Currency;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class CurrencyController extends Controller implements HasMiddleware
 {
@@ -21,6 +21,7 @@ class CurrencyController extends Controller implements HasMiddleware
             new Middleware('permission:currencies.delete', only: ['destroy']),
         ];
     }
+
     public function index(Request $request)
     {
         $currencies = Currency::query()
@@ -46,42 +47,9 @@ class CurrencyController extends Controller implements HasMiddleware
         return view('admin.pages.currencies.create');
     }
 
-    public function store(Request $request)
+    public function store(CurrencyRequest $request)
     {
-        $data = $request->validate([
-            'name_ar' => ['required', 'string', 'max:255'],
-            'name_en' => ['required', 'string', 'max:255'],
-            'code' => [
-                'required',
-                'string',
-                'size:3',
-                'alpha',
-                'unique:currencies,code',
-            ],
-            'symbol' => ['required', 'string', 'max:10'],
-            'decimal_places' => ['required', 'integer', 'min:0', 'max:9'],
-            'rate_to_egp' => ['nullable', 'numeric', 'gt:0'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $data['code'] = strtoupper($data['code']);
-
-        if ($data['code'] === 'EGP') {
-            $data['rate_to_egp'] = 1;
-            $data['is_active'] = true;
-        } else {
-            if (!isset($data['rate_to_egp'])) {
-                return back()
-                    ->withErrors([
-                        'rate_to_egp' => 'يجب إدخال سعر صرف صحيح للعملة.',
-                    ])
-                    ->withInput();
-            }
-
-            $data['is_active'] = $request->boolean('is_active');
-        }
-
-        Currency::create($data);
+        Currency::create($this->normalize($request->validated(), $request));
 
         return redirect()
             ->route('admin.currencies.index')
@@ -93,50 +61,9 @@ class CurrencyController extends Controller implements HasMiddleware
         return view('admin.pages.currencies.edit', compact('currency'));
     }
 
-    public function update(Request $request, Currency $currency)
+    public function update(CurrencyRequest $request, Currency $currency)
     {
-        $data = $request->validate([
-            'name_ar' => ['required', 'string', 'max:255'],
-            'name_en' => ['required', 'string', 'max:255'],
-            'code' => [
-                'required',
-                'string',
-                'size:3',
-                'alpha',
-                Rule::unique('currencies', 'code')->ignore($currency->id),
-            ],
-            'symbol' => ['required', 'string', 'max:10'],
-            'decimal_places' => ['required', 'integer', 'min:0', 'max:9'],
-            'rate_to_egp' => ['nullable', 'numeric', 'gt:0'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $data['code'] = strtoupper($data['code']);
-
-        if ($currency->code === 'EGP' && $data['code'] !== 'EGP') {
-            return back()
-                ->withErrors([
-                    'code' => 'لا يمكن تغيير كود العملة الأساسية EGP.',
-                ])
-                ->withInput();
-        }
-
-        if ($data['code'] === 'EGP') {
-            $data['rate_to_egp'] = 1;
-            $data['is_active'] = true;
-        } else {
-            if (!isset($data['rate_to_egp'])) {
-                return back()
-                    ->withErrors([
-                        'rate_to_egp' => 'يجب إدخال سعر صرف صحيح للعملة.',
-                    ])
-                    ->withInput();
-            }
-
-            $data['is_active'] = $request->boolean('is_active');
-        }
-
-        $currency->update($data);
+        $currency->update($this->normalize($request->validated(), $request));
 
         return redirect()
             ->route('admin.currencies.index')
@@ -146,31 +73,32 @@ class CurrencyController extends Controller implements HasMiddleware
     public function destroy(Currency $currency)
     {
         if ($currency->code === 'EGP') {
-            return back()->with(
-                'error',
-                'لا يمكن حذف العملة الأساسية EGP.'
-            );
+            return back()->with('error', __('messages.cannot_delete_base_currency'));
         }
 
         if ($currency->countries()->exists()) {
-            return back()->with(
-                'error',
-                __('messages.currency_has_countries')
-            );
+            return back()->with('error', __('messages.currency_has_countries'));
         }
 
         try {
             $currency->delete();
         } catch (QueryException $e) {
-            return back()->with(
-                'error',
-                __('messages.currency_in_use')
-            );
+            return back()->with('error', __('messages.currency_in_use'));
         }
 
-        return back()->with(
-            'success',
-            __('messages.deleted_successfully')
-        );
+        return back()->with('success', __('messages.deleted_successfully'));
+    }
+
+    // The base currency (EGP) is always active and always has a rate of 1.
+    private function normalize(array $data, Request $request): array
+    {
+        if ($data['code'] === 'EGP') {
+            $data['rate_to_egp'] = 1;
+            $data['is_active'] = true;
+        } else {
+            $data['is_active'] = $request->boolean('is_active');
+        }
+
+        return $data;
     }
 }

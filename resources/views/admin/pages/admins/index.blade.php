@@ -45,7 +45,7 @@
                 <form id="bulkDeleteForm" method="POST" action="{{ route('admin.bulk.delete') }}">
                     @csrf
 
-                    <input type="hidden" name="model" value="User">
+                    <input type="hidden" name="model" value="admins">
                     <input type="hidden" name="ids" id="selectedIds">
 
                     <button type="button" onclick="confirmBulkDelete()" class="btn btn-danger mb-3">

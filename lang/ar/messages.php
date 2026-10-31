@@ -45,6 +45,10 @@ return [
     'currency_in_use' => 'لا يمكن حذف هذه العملة لأنها مستخدمة.',
     'country_in_use' => 'لا يمكن حذف هذه الدولة لأنها مستخدمة.',
     'city_in_use' => 'لا يمكن حذف هذه المدينة لأنها مستخدمة.',
+    'category_has_products' => 'لا يمكن حذف هذا القسم لأنه يحتوي على منتجات.',
+    'vendor_has_products' => 'لا يمكن حذف هذا البائع لأن متجره يحتوي على منتجات.',
+    'cannot_delete_base_currency' => 'لا يمكن حذف العملة الأساسية EGP.',
+    'bulk_deleted_count' => 'تم حذف :deleted وتخطي :skipped لأنها مستخدمة أو محمية.',
+    'bulk_nothing_selected' => 'لم يتم تحديد أي عنصر.',
 
 ];
-

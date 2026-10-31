@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CountryRequest;
 use App\Models\Country;
 use App\Models\Currency;
-use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
-class CountryController extends Controller implements  HasMiddleware
+class CountryController extends Controller implements HasMiddleware
 {
     public static function middleware(): array
     {
@@ -22,6 +22,7 @@ class CountryController extends Controller implements  HasMiddleware
             new Middleware('permission:countries.delete', only: ['destroy']),
         ];
     }
+
     public function index(Request $request)
     {
         $countries = Country::with('currency')
@@ -53,23 +54,9 @@ class CountryController extends Controller implements  HasMiddleware
         return view('admin.pages.countries.create', compact('currencies'));
     }
 
-    public function store(Request $request)
+    public function store(CountryRequest $request)
     {
-        $data = $request->validate([
-            'name_ar' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('countries', 'name_ar')
-                    ->where('currency_id', $request->currency_id),
-            ],
-            'name_en' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'size:2', 'alpha', 'unique:countries,code'],
-            'currency_id' => ['required', 'integer', 'exists:currencies,id'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $data['code'] = strtoupper($data['code']);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         Country::create($data);
@@ -86,30 +73,9 @@ class CountryController extends Controller implements  HasMiddleware
         return view('admin.pages.countries.edit', compact('country', 'currencies'));
     }
 
-    public function update(Request $request, Country $country)
+    public function update(CountryRequest $request, Country $country)
     {
-        $data = $request->validate([
-            'name_ar' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('countries', 'name_ar')
-                    ->where('currency_id', $request->currency_id)
-                    ->ignore($country->id),
-            ],
-            'name_en' => ['required', 'string', 'max:255'],
-            'code' => [
-                'required',
-                'string',
-                'size:2',
-                'alpha',
-                Rule::unique('countries', 'code')->ignore($country->id),
-            ],
-            'currency_id' => ['required', 'integer', 'exists:currencies,id'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $data['code'] = strtoupper($data['code']);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         $country->update($data);

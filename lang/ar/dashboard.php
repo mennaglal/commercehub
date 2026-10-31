@@ -341,5 +341,6 @@ return [
     'add'=>'اضافة',
     'delete'=>'حذف',
     'Leave password blank if you do not want to change it'=>'اترك حقل كلمة المرور فارغاً إذا كنت لا ترغب في تغييرها',
-
+    'select_all' => 'تحديد الكل',
+    'deselect_all' => 'إلغاء تحديد الكل',
 ];
