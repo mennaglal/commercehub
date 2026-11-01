@@ -96,7 +96,7 @@
 
                                 <td>{{ $item->name_en }}</td>
 
-                                <td>{{ $item->country?->name_en ?? '-' }}</td>
+                                <td>{{ $item->country?->name ?? '-' }}</td>
 
                                 <td>
                                         <span class="badge badge-{{ $item->is_active ? 'success' : 'secondary' }}">

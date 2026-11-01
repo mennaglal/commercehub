@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\OrderRequest;
+use App\Models\Area;
+use App\Models\City;
+use App\Models\Country;
 use App\Models\Order;
 use App\Models\Product;
 use App\Services\OrderService;
@@ -26,7 +29,7 @@ class OrderController extends Controller
         $payment = $pick('payment_status', Order::PAYMENT_STATUSES);
         $search = trim((string) $request->query('search'));
 
-        $orders = Order::with('store:id,name')
+        $orders = Order::with('items:id,order_id,store_name')
             ->withCount('items')
             ->when($status, fn ($query) => $query->where('status', $status))
             ->when($delivery, fn ($query) => $query->where('delivery_status', $delivery))
@@ -41,8 +44,16 @@ class OrderController extends Controller
             ->latest()
             ->paginate(15)
             ->withQueryString();
+        $countries = Country::all();
+        $cities = City::all();
+        $areas = Area::all();
 
-        return view('admin.pages.orders.index', ['orders' => $orders]);
+        return view('admin.pages.orders.index', [
+            'orders' => $orders,
+            'countries' => $countries,
+            'cities' => $cities,
+            'areas' => $areas,
+        ]);
     }
 
     public function create()
@@ -52,7 +63,7 @@ class OrderController extends Controller
         // Data used by the JS on the page. The price here is for DISPLAY only:
         // the server calculates it again when the order is saved.
         $products = Product::where('status', 1)
-            ->with('variants.values')
+            ->with(['variants.values', 'store:id,name'])
             ->orderBy('name_en')
             ->get()
             ->map(fn ($product) => [
@@ -87,8 +98,13 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $order->load(['items', 'store:id,name', 'blogger:id,name']);
-
+        $order->load([
+            'country',
+            'city',
+            'area',
+            'items',
+            'blogger',
+        ]);
         return view('admin.pages.orders.show', ['order' => $order]);
     }
 

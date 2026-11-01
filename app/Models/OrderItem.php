@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
-    public $timestamps = false;
 
     protected $fillable = [
         'order_id', 'product_id', 'variant_id',
         'product_name', 'variant_label', 'sku',
         'unit_price', 'quantity', 'line_total',
+        'store_id', 'store_name',
     ];
 
     protected $casts = [
@@ -24,6 +24,10 @@ class OrderItem extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
     }
 
     public function product(): BelongsTo

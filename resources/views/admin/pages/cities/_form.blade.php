@@ -54,7 +54,7 @@
                     value="{{ $option->id }}"
                     {{ (string) old('country_id', $city->country_id ?? '') === (string) $option->id ? 'selected' : '' }}
                 >
-                    {{ $option->name_en }} ({{ $option->code }})
+                    {{ $option->name }} ({{ $option->code }})
                 </option>
             @endforeach
         </select>

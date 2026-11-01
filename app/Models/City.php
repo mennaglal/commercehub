@@ -19,7 +19,14 @@ class City extends Model
     {
         return ['is_active' => 'boolean'];
     }
+    protected $appends = ['name'];
 
+    public function getNameAttribute(): string
+    {
+        return (app()->getLocale() == "ar")
+            ? $this->name_ar
+            : $this->name_en;
+    }
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);

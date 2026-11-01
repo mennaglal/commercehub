@@ -12,45 +12,70 @@ return new class extends Migration
             $table->id();
             $table->string('order_number')->unique();
 
-            // Orders are kept even if the store is deleted.
-            $table->foreignId('store_id')->nullable()->constrained()->nullOnDelete();
+            // Order status: pending, confirmed, cancelled.
+            $table->string('status', 20)
+                ->default('pending')
+                ->index();
 
-            // Order status: pending | confirmed | cancelled
-            $table->string('status', 20)->default('pending')->index();
-
-            // Customer
+            // Customer information.
             $table->string('customer_name');
             $table->string('customer_phone', 30);
             $table->text('shipping_address');
             $table->text('notes')->nullable();
 
-            // Money
+            // Order totals.
             $table->decimal('subtotal', 12, 2);
             $table->decimal('discount_total', 12, 2)->default(0);
             $table->decimal('shipping_total', 12, 2)->default(0);
             $table->decimal('total', 12, 2);
 
-            // Coupon (the code is copied, so the order stays readable if the coupon is deleted)
-            $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();
+            // Preserve coupon details if the coupon is deleted.
+            $table->foreignId('coupon_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
             $table->string('coupon_code', 50)->nullable();
 
-            // Blogger commission, calculated once when the order is created
-            $table->foreignId('blogger_id')->nullable()->constrained()->nullOnDelete();
-            $table->decimal('commission_amount', 12, 2)->default(0);
-            $table->string('commission_status', 20)->nullable()->index();   // pending | earned | cancelled
+            // Blogger commission.
+            $table->foreignId('blogger_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
 
-            // Payment
-            $table->string('payment_method', 20)->default('cod');           // cod | online | bank_transfer
-            $table->string('payment_gateway', 30)->nullable();              // fatura, tabby ... (online only)
-            $table->string('payment_status', 20)->default('pending')->index(); // pending | paid | failed | refunded
-            $table->string('payment_id')->nullable()->index();              // id on the gateway side
+            $table->decimal('commission_amount', 12, 2)->default(0);
+
+            $table->string('commission_status', 20)
+                ->nullable()
+                ->index();
+
+            // Payment method and selected gateway.
+            $table->string('payment_method', 20)->default('cod');
+
+            // myfatoorah, paymob, paypal.
+            // Null for COD and bank transfer.
+            $table->string('payment_gateway', 30)->nullable();
+
+            // Overall payment status for this order.
+            $table->string('payment_status', 20)
+                ->default('pending')
+                ->index();
+
+            // Gateway-specific references.
+            $table->string('payment_id')->nullable()->index();
             $table->string('invoice_id')->nullable();
             $table->text('invoice_url')->nullable();
-            $table->json('payment_data')->nullable();                       // raw gateway response / webhook
+
+            // Store only necessary, non-sensitive gateway metadata.
+            $table->json('payment_data')->nullable();
+
             $table->timestamp('paid_at')->nullable();
 
-            // Delivery
-            $table->string('delivery_status', 20)->default('pending')->index(); // pending | preparing | shipped | delivered | returned
+            // Delivery information.
+            $table->string('delivery_status', 20)
+                ->default('pending')
+                ->index();
+
             $table->string('tracking_number', 100)->nullable();
             $table->timestamp('shipped_at')->nullable();
             $table->timestamp('delivered_at')->nullable();

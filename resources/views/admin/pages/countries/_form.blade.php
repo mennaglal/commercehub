@@ -75,7 +75,7 @@
                     value="{{ $option->id }}"
                     {{ (string) old('currency_id', $country->currency_id ?? '') === (string) $option->id ? 'selected' : '' }}
                 >
-                    {{ $option->name_en }} ({{ $option->code }})
+                    {{ $option->name }} ({{ $option->code }})
                 </option>
             @endforeach
         </select>

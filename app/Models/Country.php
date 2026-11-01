@@ -16,11 +16,19 @@ class Country extends Model
         'is_active',
     ];
 
+
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
     }
+    protected $appends = ['name'];
 
+    public function getNameAttribute(): string
+    {
+        return (app()->getLocale() == "ar")
+            ? $this->name_ar
+            : $this->name_en;
+    }
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);

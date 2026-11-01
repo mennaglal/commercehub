@@ -99,7 +99,7 @@
 
                                 <td>{{ $item->code }}</td>
 
-                                <td>{{ $item->currency?->name_en ?? '-' }}</td>
+                                <td>{{ $item->currency?->name ?? '-' }}</td>
 
                                 <td>
                                         <span class="badge badge-{{ $item->is_active ? 'success' : 'secondary' }}">

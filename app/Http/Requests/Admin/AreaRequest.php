@@ -27,6 +27,7 @@ class AreaRequest extends FormRequest
             ],
             'name_en' => ['required', 'string', 'max:255'],
             'city_id' => ['required', 'integer', 'exists:cities,id'],
+            'shipping_price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

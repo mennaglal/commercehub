@@ -28,11 +28,6 @@ class OrderService
         return DB::transaction(function () use ($data) {
             $lines = $this->buildLines($data['items']);
 
-            $storeIds = collect($lines)->pluck('store_id')->unique();
-            if ($storeIds->count() > 1) {
-                $this->fail(__('orders.errors.one_store'));
-            }
-
             $subtotal = round(collect($lines)->sum('line_total'), 2);
             $shipping = round((float) ($data['shipping_total'] ?? 0), 2);
 
@@ -53,12 +48,15 @@ class OrderService
 
             $order = Order::create([
                 'order_number' => $this->makeOrderNumber(),
-                'store_id' => $storeIds->first(),
                 'status' => Order::STATUS_PENDING,
 
                 'customer_name' => $data['customer_name'],
                 'customer_phone' => $data['customer_phone'],
+                'shipping_country' => $data['shipping_country'] ?? null,
+                'shipping_city' => $data['shipping_city'] ?? null,
+                'shipping_area' => $data['shipping_area'] ?? null,
                 'shipping_address' => $data['shipping_address'],
+                'shipping_notes' => $data['shipping_notes'] ?? null,
                 'notes' => $data['notes'] ?? null,
 
                 'subtotal' => $subtotal,
@@ -78,8 +76,14 @@ class OrderService
                 'delivery_status' => Order::DELIVERY_PENDING,
             ]);
 
+            $this->recordHistory($order, 'order_status', null, Order::STATUS_PENDING, 'Order created');
+            $this->recordHistory($order, 'delivery_status', null, Order::DELIVERY_PENDING, 'Order created');
+            $this->recordHistory($order, 'payment_status', null, Order::PAYMENT_PENDING, 'Order created');
+
             foreach ($lines as $line) {
                 $order->items()->create([
+                    'store_id' => $line['store_id'],
+                    'store_name' => $line['store_name'],
                     'product_id' => $line['product']->id,
                     'variant_id' => $line['variant']?->id,
                     'product_name' => $line['product_name'],
@@ -119,6 +123,7 @@ class OrderService
                 $this->fail(__('orders.errors.status_not_allowed'), 'status');
             }
 
+            $oldStatus = $order->status;
             $changes = ['status' => $status];
 
             if ($status === Order::STATUS_CANCELLED) {
@@ -130,6 +135,7 @@ class OrderService
             }
 
             $order->update($changes);
+            $this->recordHistory($order, 'order_status', $oldStatus, $status);
         });
     }
 
@@ -149,6 +155,7 @@ class OrderService
                 $this->fail(__('orders.errors.delivery_not_allowed'), 'delivery_status');
             }
 
+            $oldDeliveryStatus = $order->delivery_status;
             $changes = ['delivery_status' => $status];
 
             if ($trackingNumber) {
@@ -179,6 +186,10 @@ class OrderService
             }
 
             $order->update($changes);
+            $this->recordHistory($order, 'delivery_status', $oldDeliveryStatus, $status);
+            if (isset($changes['payment_status'])) {
+                $this->recordHistory($order, 'payment_status', Order::PAYMENT_PENDING, $changes['payment_status'], 'Payment collected on delivery');
+            }
         });
     }
 
@@ -194,7 +205,12 @@ class OrderService
             $changes['paid_at'] = now();
         }
 
+        $oldPaymentStatus = $order->payment_status;
         $order->update($changes);
+
+        if (isset($changes['payment_status']) && $oldPaymentStatus !== $changes['payment_status']) {
+            $this->recordHistory($order, 'payment_status', $oldPaymentStatus, $changes['payment_status']);
+        }
     }
 
     /* ---------------- Prices ---------------- */
@@ -247,6 +263,7 @@ class OrderService
 
         // 2) Load (and lock) everything with two queries, not one query per row.
         $products = Product::whereIn('id', collect($merged)->pluck('product_id'))
+            ->with('store:id,name')
             ->lockForUpdate()->get()->keyBy('id');
 
         $variants = ProductVariant::whereIn('id', collect($merged)->pluck('variant_id')->filter())
@@ -283,6 +300,7 @@ class OrderService
                 'product' => $product,
                 'variant' => $variant,
                 'store_id' => $product->store_id,
+                'store_name' => $product->store?->name,
                 'product_name' => $name,
                 'variant_label' => $variant ? $this->variantLabel($variant) : null,
                 'sku' => ($variant?->sku) ?: $product->sku,
@@ -320,6 +338,22 @@ class OrderService
     private function lock(Order $order): Order
     {
         return Order::lockForUpdate()->findOrFail($order->id);
+    }
+
+    private function recordHistory(
+        Order $order,
+        string $eventType,
+        ?string $oldValue,
+        string $newValue,
+        ?string $note = null
+    ): void {
+        $order->statusHistories()->create([
+            'event_type' => $eventType,
+            'old_value' => $oldValue,
+            'new_value' => $newValue,
+            'note' => $note,
+            'changed_by' => auth()->id(),
+        ]);
     }
 
     private function makeOrderNumber(): string

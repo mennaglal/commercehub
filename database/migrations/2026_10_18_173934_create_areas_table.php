@@ -17,6 +17,8 @@ return new class extends Migration
                 ->constrained('cities')
                 ->restrictOnDelete();
 
+            $table->decimal('shipping_price', 8, 2)->default(0);
+
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 

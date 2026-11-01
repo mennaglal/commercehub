@@ -10,20 +10,40 @@ return new class extends Migration
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained()->cascadeOnDelete();
 
-            // nullOnDelete: when a product/variant is deleted (or the variants are
-            // rebuilt on product edit), the order item stays valid thanks to the snapshot below.
-            $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('variant_id')->nullable()->constrained('product_variants')->nullOnDelete();
+            $table->foreignId('order_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-            // Snapshot: the order must stay exactly as it was sold.
+            $table->foreignId('store_id')
+                ->nullable()
+                ->constrained('stores')
+                ->nullOnDelete();
+
+            $table->string('store_name')->nullable();
+
+            // Keep the order item if the product is deleted.
+            $table->foreignId('product_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            // Keep the order item if the variant is deleted.
+            $table->foreignId('variant_id')
+                ->nullable()
+                ->constrained('product_variants')
+                ->nullOnDelete();
+
+            // Snapshot of the product at purchase time.
             $table->string('product_name');
-            $table->string('variant_label')->nullable();   // example: "Red / S"
+            $table->string('variant_label')->nullable();
             $table->string('sku')->nullable();
+
             $table->decimal('unit_price', 12, 2);
             $table->unsignedInteger('quantity');
             $table->decimal('line_total', 12, 2);
+            $table->timestamps();
+
         });
     }
 

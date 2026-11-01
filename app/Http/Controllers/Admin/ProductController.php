@@ -30,8 +30,6 @@ use Throwable;
  */
 class ProductController extends Controller implements HasMiddleware
 {
-    // Page sizes offered in the products list (the second one is the default).
-    public const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100];
 
     public static function middleware(): array
     {
@@ -62,7 +60,7 @@ class ProductController extends Controller implements HasMiddleware
                 });
             })
             ->latest()
-            ->paginate($perPage)
+            ->paginate(15)
             ->withQueryString();
 
         return view('admin.pages.products.index', compact('products'));

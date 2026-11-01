@@ -11,12 +11,24 @@ class Area extends Model
         'name_ar',
         'name_en',
         'city_id',
+        'shipping_price',
         'is_active',
     ];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'shipping_price' => 'decimal:2',
+            'is_active' => 'boolean',
+        ];
+    }
+    protected $appends = ['name'];
+
+    public function getNameAttribute(): string
+    {
+        return (app()->getLocale() == "ar")
+            ? $this->name_ar
+            : $this->name_en;
     }
 
     public function city(): BelongsTo

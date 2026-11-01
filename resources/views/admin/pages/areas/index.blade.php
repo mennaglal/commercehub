@@ -78,6 +78,7 @@
                             <th>{{ __('dashboard.Arabic name') }}</th>
                             <th>{{ __('dashboard.English name') }}</th>
                             <th>{{ __('dashboard.City') }}</th>
+                            <th>{{ __('dashboard.Shipping price') }}</th>
                             <th>{{ __('dashboard.Status') }}</th>
                             <th>{{ __('dashboard.Actions') }}</th>
                         </tr>
@@ -101,13 +102,14 @@
 
                                 <td>{{ $item->name_en }}</td>
 
-                                <td>{{ $item->city?->name_en ?? '-' }}</td>
+                                <td>{{ $item->city?->name ?? '-' }}</td>
 
                                 <td>
                                         <span class="badge badge-{{ $item->is_active ? 'success' : 'secondary' }}">
                                             {{ $item->is_active ? __('dashboard.Active') : __('dashboard.Inactive') }}
                                         </span>
                                 </td>
+                                <td>{{ number_format((float) $item->shipping_price, 2) }}</td>
 
                                 <td class="text-nowrap">
                                     <a

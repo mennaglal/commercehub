@@ -348,5 +348,5 @@ return [
     'Leave password blank if you do not want to change it'=>'Leave password blank if you do not want to change it',
     'select_all' => 'Select All',
     'deselect_all' => 'Deselect All',
-
+    'Shipping price' => 'Shipping Price',
 ];

@@ -54,12 +54,34 @@
                     value="{{ $option->id }}"
                     {{ (string) old('city_id', $area->city_id ?? '') === (string) $option->id ? 'selected' : '' }}
                 >
-                    {{ $option->name_en }} — {{ $option->country?->name_en ?? '-' }}
+                    {{ $option->name }} — {{ $option->country?->name ?? '-' }}
                 </option>
             @endforeach
         </select>
 
         @error('city_id')
+        <small class="text-danger">{{ $message }}</small>
+        @enderror
+    </div>
+    <div class="form-group col-md-6">
+        <label for="shipping_price">
+            {{ __('dashboard.Shipping price') }}
+            <span class="text-danger">*</span>
+        </label>
+
+        <input
+            type="number"
+            name="shipping_price"
+            id="shipping_price"
+            class="form-control"
+            value="{{ old('shipping_price', $area->shipping_price ?? '0.00') }}"
+            min="0"
+            max="999999.99"
+            step="0.01"
+            required
+        >
+
+        @error('shipping_price')
         <small class="text-danger">{{ $message }}</small>
         @enderror
     </div>
