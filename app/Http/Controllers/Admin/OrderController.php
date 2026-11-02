@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\OrdersExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\OrderRequest;
 use App\Models\Area;
@@ -11,7 +12,10 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OrderController extends Controller
 {
@@ -19,41 +23,96 @@ class OrderController extends Controller
     {
     }
 
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:orders.view', only: ['index', 'show','export']),
+            new Middleware('permission:orders.create', only: ['create', 'store']),
+            new Middleware('permission:orders.update', only: [
+                'updateStatus',
+                'updateDelivery',
+                'updatePayment',
+            ]),
+            new Middleware('permission:orders.delete', only: [
+                'destroy',
+                'bulkDestroy',
+            ]),
+        ];
+    }
+
     public function index(Request $request)
     {
-        // A filter value that is not in the list is ignored.
-        $pick = fn (string $name, array $allowed) => in_array($request->query($name), $allowed, true) ? $request->query($name) : null;
+        $pick = fn (string $name, array $allowed) =>
+        in_array($request->query($name), $allowed, true)
+            ? $request->query($name)
+            : null;
 
         $status = $pick('status', Order::STATUSES);
         $delivery = $pick('delivery_status', Order::DELIVERY_STATUSES);
         $payment = $pick('payment_status', Order::PAYMENT_STATUSES);
         $search = trim((string) $request->query('search'));
 
-        $orders = Order::with('items:id,order_id,store_name')
+        // Location filters.
+        $countryId = $request->integer('country_id') ?: null;
+        $cityId = $request->integer('region_id') ?: null;
+        $areaId = $request->integer('area_id') ?: null;
+
+        $orders = Order::with([
+            'items:id,order_id,store_name',
+            'country',
+            'city',
+            'area',
+            'coupon',
+        ])
             ->withCount('items')
-            ->when($status, fn ($query) => $query->where('status', $status))
-            ->when($delivery, fn ($query) => $query->where('delivery_status', $delivery))
-            ->when($payment, fn ($query) => $query->where('payment_status', $payment))
+            ->when($status, fn ($query) =>
+            $query->where('status', $status)
+            )
+            ->when($delivery, fn ($query) =>
+            $query->where('delivery_status', $delivery)
+            )
+            ->when($payment, fn ($query) =>
+            $query->where('payment_status', $payment)
+            )
+            ->when($countryId, fn ($query) =>
+            $query->where('country_id', $countryId)
+            )
+            ->when($cityId, fn ($query) =>
+            $query->where('city_id', $cityId)
+            )
+            ->when($areaId, fn ($query) =>
+            $query->where('area_id', $areaId)
+            )
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('order_number', 'like', "%{$search}%")
                         ->orWhere('customer_name', 'like', "%{$search}%")
-                        ->orWhere('customer_phone', 'like', "%{$search}%");
+                        ->orWhere('customer_phone', 'like', "%{$search}%")
+                        ->orWhere('coupon_code', 'like', "%{$search}%");
                 });
             })
             ->latest()
             ->paginate(15)
             ->withQueryString();
-        $countries = Country::all();
-        $cities = City::all();
-        $areas = Area::all();
 
         return view('admin.pages.orders.index', [
             'orders' => $orders,
-            'countries' => $countries,
-            'cities' => $cities,
-            'areas' => $areas,
+            'countries' => Country::all(),
+            'cities' => City::all(),
+            'areas' => Area::all(),
         ]);
+    }
+
+    // Keep your existing create(), store(), show(),
+    // updateStatus(), updateDelivery(), and updatePayment() methods.
+
+    public function destroy(Order $order)
+    {
+        DB::transaction(function () use ($order) {
+            $order->delete();
+        });
+
+        return back()->with('success', __('messages.deleted_successfully'));
     }
 
     public function create()
@@ -144,5 +203,41 @@ class OrderController extends Controller
         $this->orders->updatePayment($order, $data);
 
         return back()->with('success', __('orders.messages.payment_updated'));
+    }
+    public function export(Request $request)
+    {
+        $filters = $request->only([
+            'search',
+            'status',
+            'payment_status',
+            'delivery_status',
+            'country_id',
+            'region_id',
+            'area_id',
+        ]);
+
+        // Validate filter values before exporting.
+        $filters['status'] = in_array(
+            $filters['status'] ?? null,
+            Order::STATUSES,
+            true
+        ) ? $filters['status'] : null;
+
+        $filters['payment_status'] = in_array(
+            $filters['payment_status'] ?? null,
+            Order::PAYMENT_STATUSES,
+            true
+        ) ? $filters['payment_status'] : null;
+
+        $filters['delivery_status'] = in_array(
+            $filters['delivery_status'] ?? null,
+            Order::DELIVERY_STATUSES,
+            true
+        ) ? $filters['delivery_status'] : null;
+
+        return Excel::download(
+            new OrdersExport($filters),
+            'orders-' . now()->format('Y-m-d-His') . '.xlsx'
+        );
     }
 }

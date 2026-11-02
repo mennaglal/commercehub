@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             BloggerSeeder::class,
             UserSeeder::class,
             StoreSeeder::class,
+            VariantSeeder::class,
             ProductSeeder::class,
             OrderSeeder::class,
 

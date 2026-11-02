@@ -1,3 +1,4 @@
+
 @extends('admin.layouts.app')
 
 @php
@@ -10,20 +11,35 @@
         (string) $order->invoice_url,
         ['https://', 'http://']
     );
+
+    $gateway = $order->payment_gateway
+        ? config('orders.gateways.' . $order->payment_gateway)
+        : null;
+
+    $gatewayName = is_array($gateway)
+        ? ($gateway['name'] ?? $order->payment_gateway)
+        : ($gateway ?? $order->payment_gateway);
 @endphp
 
 @section('content')
-    <div class="container-fluid">
+    <div class="container-fluid" id="order-print-area">
 
         {{-- ===================== Header ===================== --}}
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 order-page-header">
             <h4 class="mb-0">
                 {{ __('orders.details') }}: {{ $order->order_number }}
             </h4>
 
-            <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
-                {{ __('orders.back') }}
-            </a>
+            <div class="d-flex gap-2 no-print">
+                <button type="button" onclick="printOrderDetails()" class="btn btn-primary">
+                    <i class="fas fa-print"></i>
+                    {{ app()->getLocale() === 'ar' ? 'طباعة الطلب' : 'Print Order' }}
+                </button>
+
+                <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
+                    {{ __('orders.back') }}
+                </a>
+            </div>
         </div>
 
         @if(session('success'))
@@ -40,7 +56,8 @@
             </div>
         @endif
 
-        <div class="row">
+        {{-- ===================== Order Information ===================== --}}
+        <div class="row order-summary-grid">
 
             {{-- ===================== Customer & Shipping ===================== --}}
             <div class="col-md-6 mb-3">
@@ -75,7 +92,7 @@
 
                         <p class="mb-1">
                             <strong>{{ app()->getLocale() === 'ar' ? 'المدينة' : 'City' }}:</strong>
-                            {{ $order->region?->name ?? '-' }}
+                            {{ $order->city?->name ?? '-' }}
                         </p>
 
                         <p class="mb-1">
@@ -125,9 +142,9 @@
                     <div class="card-body">
 
                         <p>
-                        <span class="badge bg-{{ $order->badge('status') }}">
-                            {{ __('orders.statuses.' . $order->status) }}
-                        </span>
+                            <span class="badge bg-{{ $order->badge('status') }}">
+                                {{ __('orders.statuses.' . $order->status) }}
+                            </span>
 
                             <small class="text-muted ms-2">
                                 {{ $order->created_at->format('Y-m-d H:i') }}
@@ -144,7 +161,6 @@
                                 @method('PATCH')
 
                                 <div class="input-group">
-
                                     <select name="status" class="form-control" required>
                                         @foreach($nextStatuses as $status)
                                             <option value="{{ $status }}">
@@ -156,7 +172,6 @@
                                     <button class="btn btn-primary">
                                         {{ __('orders.fields.update') }}
                                     </button>
-
                                 </div>
                             </form>
                         @else
@@ -185,7 +200,7 @@
                             {{ __('orders.payment_methods.' . $order->payment_method) }}
 
                             @if($order->payment_gateway)
-                                ({{ config('orders.gateways.' . $order->payment_gateway, $order->payment_gateway) }})
+                                ({{ $gatewayName }})
                             @endif
                         </p>
 
@@ -193,8 +208,8 @@
                             <strong>{{ __('orders.fields.payment_status') }}:</strong>
 
                             <span class="badge bg-{{ $order->badge('payment_status') }}">
-                            {{ __('orders.payment_statuses.' . $order->payment_status) }}
-                        </span>
+                                {{ __('orders.payment_statuses.' . $order->payment_status) }}
+                            </span>
                         </p>
 
                         @if($order->paid_at)
@@ -284,7 +299,6 @@
                             <button class="btn btn-primary">
                                 {{ __('orders.fields.update') }}
                             </button>
-
                         </form>
 
                     </div>
@@ -305,8 +319,8 @@
                             <strong>{{ __('orders.fields.delivery_status') }}:</strong>
 
                             <span class="badge bg-{{ $order->badge('delivery_status') }}">
-                            {{ __('orders.delivery_statuses.' . $order->delivery_status) }}
-                        </span>
+                                {{ __('orders.delivery_statuses.' . $order->delivery_status) }}
+                            </span>
                         </p>
 
                         @if($order->tracking_number)
@@ -385,7 +399,6 @@
                                 <button class="btn btn-primary">
                                     {{ __('orders.fields.update') }}
                                 </button>
-
                             </form>
 
                         @endif
@@ -431,8 +444,8 @@
                                     {{ number_format($order->commission_amount, 2) }}
 
                                     <span class="badge bg-{{ $order->badge('commission_status') }}">
-                                    {{ __('orders.commission_statuses.' . $order->commission_status) }}
-                                </span>
+                                        {{ __('orders.commission_statuses.' . $order->commission_status) }}
+                                    </span>
                                 </p>
 
                             @endif
@@ -471,17 +484,11 @@
                     @forelse($order->items as $item)
                         <tr>
                             <td>{{ $item->product_name }}</td>
-
                             <td>{{ $item->store_name ?? '-' }}</td>
-
                             <td>{{ $item->variant_label ?? '-' }}</td>
-
                             <td>{{ $item->sku ?? '-' }}</td>
-
                             <td>{{ number_format($item->unit_price, 2) }}</td>
-
                             <td>{{ $item->quantity }}</td>
-
                             <td>{{ number_format($item->line_total, 2) }}</td>
                         </tr>
                     @empty
@@ -541,4 +548,252 @@
         </div>
 
     </div>
+    <script>
+        function printOrderDetails() {
+            const orderArea = document.getElementById('order-print-area');
+
+            if (!orderArea) {
+                alert('Order details area not found.');
+                return;
+            }
+
+            // Open a separate print window.
+            const printWindow = window.open('', '_blank', 'width=1000,height=800');
+
+            if (!printWindow) {
+                alert('Please allow pop-ups to print the order.');
+                return;
+            }
+
+            // Copy all stylesheets and inline styles from the current page.
+            const styles = Array.from(
+                document.querySelectorAll('link[rel="stylesheet"], style')
+            ).map(element => element.outerHTML).join('\n');
+
+            // Clone the order content.
+            const printContent = orderArea.cloneNode(true);
+
+            // Remove buttons and navigation controls.
+            printContent.querySelectorAll('.no-print').forEach(element => {
+                element.remove();
+            });
+
+            // Remove all update forms and their fields.
+            printContent.querySelectorAll('form').forEach(element => {
+                element.remove();
+            });
+
+            // Remove any remaining interactive controls.
+            printContent.querySelectorAll(
+                'button, input, select, textarea'
+            ).forEach(element => {
+                element.remove();
+            });
+
+            const printCss = `
+            <style>
+                @page {
+                    size: A4;
+                    margin: 12mm;
+                }
+
+                body {
+                    background: #fff;
+                    color: #212529;
+                    font-family: Arial, sans-serif;
+                    font-size: 13px;
+                    direction: ${document.documentElement.dir || 'ltr'};
+                }
+
+                #order-print-area {
+                    width: 100%;
+                    max-width: 100%;
+                    margin: 0 auto;
+                    padding: 0;
+                }
+
+                .order-page-header {
+                    display: flex !important;
+                    justify-content: space-between !important;
+                    align-items: center !important;
+                    margin-bottom: 15px !important;
+                }
+
+                .order-summary-grid {
+                    display: flex !important;
+                    flex-wrap: wrap !important;
+                    align-items: stretch !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                }
+
+                .order-summary-grid > .col-md-6 {
+                    flex: 0 0 50% !important;
+                    width: 50% !important;
+                    max-width: 50% !important;
+                    padding: 5px !important;
+                }
+
+                .order-summary-grid > .col-12 {
+                    flex: 0 0 100% !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    padding: 5px !important;
+                }
+
+                .card {
+                    border: 1px solid #dee2e6 !important;
+                    border-radius: 5px !important;
+                    box-shadow: none !important;
+                    margin-bottom: 10px !important;
+                    background: #fff !important;
+                    break-inside: avoid;
+                }
+
+                .card-header {
+                    background: #f2f2f2 !important;
+                    color: #212529 !important;
+                    border-bottom: 1px solid #dee2e6 !important;
+                    padding: 10px !important;
+                    font-weight: bold !important;
+                }
+
+                .card-body {
+                    padding: 12px !important;
+                }
+
+                .table-responsive {
+                    overflow: visible !important;
+                }
+
+                table {
+                    width: 100% !important;
+                    border-collapse: collapse !important;
+                }
+
+                th, td {
+                    border: 1px solid #dee2e6 !important;
+                    padding: 7px !important;
+                    color: #212529 !important;
+                }
+
+                thead {
+                    display: table-header-group;
+                }
+
+                tr {
+                    break-inside: avoid;
+                }
+
+                .badge {
+                    display: inline-block !important;
+                    padding: 4px 7px !important;
+                    border: 1px solid #999 !important;
+                    background: #eee !important;
+                    color: #212529 !important;
+                }
+
+                p, h4, h6, strong, span {
+                    color: #212529 !important;
+                }
+
+                a {
+                    color: #212529 !important;
+                    text-decoration: none !important;
+                }
+
+                hr {
+                    border-color: #dee2e6 !important;
+                }
+
+                .row {
+                    display: flex !important;
+                    flex-wrap: wrap !important;
+                }
+
+                .col-md-4 {
+                    width: 50% !important;
+                    max-width: 50% !important;
+                    margin-left: auto !important;
+                }
+
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                .badge {
+                    display: inline-block !important;
+                    padding: 4px 7px !important;
+                    border: none !important;
+                    color: #fff !important;
+
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+                /* Preserve Bootstrap badge background colors */
+                .badge.bg-success {
+                    background-color: #198754 !important;
+                }
+
+            .badge.bg-danger {
+                background-color: #dc3545 !important;
+            }
+
+            .badge.bg-warning {
+                background-color: #ffc107 !important;
+                color: #212529 !important;
+            }
+
+            .badge.bg-info {
+                background-color: #0dcaf0 !important;
+                color: #212529 !important;
+            }
+
+            .badge.bg-primary {
+                background-color: #0d6efd !important;
+            }
+
+            .badge.bg-secondary {
+                background-color: #6c757d !important;
+            }
+
+            .badge.bg-dark {
+                background-color: #212529 !important;
+            }
+            </style>
+        `;
+
+            printWindow.document.open();
+
+            printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="${document.documentElement.lang || 'en'}"
+                  dir="${document.documentElement.dir || 'ltr'}">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Order - {{ $order->order_number }}</title>
+                ${styles}
+                ${printCss}
+            </head>
+            <body>
+                ${printContent.outerHTML}
+            </body>
+            </html>
+        `);
+
+            printWindow.document.close();
+
+            // Wait until the copied stylesheets and content are loaded.
+            printWindow.onload = function () {
+                printWindow.focus();
+
+                setTimeout(function () {
+                    printWindow.print();
+                }, 700);
+            };
+        }
+    </script>
+
 @endsection

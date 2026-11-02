@@ -116,6 +116,9 @@
         </div>
     </div>
 
-    <div class="mt-3">{{ $bloggers->links() }}</div>
+    {{-- Pagination --}}
+    <div class="d-flex justify-content-center">
+        {{ $bloggers->links('vendor.pagination.medium') }}
+    </div>
 </div>
 @endsection

@@ -76,9 +76,6 @@ class OrderService
                 'delivery_status' => Order::DELIVERY_PENDING,
             ]);
 
-            $this->recordHistory($order, 'order_status', null, Order::STATUS_PENDING, 'Order created');
-            $this->recordHistory($order, 'delivery_status', null, Order::DELIVERY_PENDING, 'Order created');
-            $this->recordHistory($order, 'payment_status', null, Order::PAYMENT_PENDING, 'Order created');
 
             foreach ($lines as $line) {
                 $order->items()->create([
@@ -135,7 +132,6 @@ class OrderService
             }
 
             $order->update($changes);
-            $this->recordHistory($order, 'order_status', $oldStatus, $status);
         });
     }
 
@@ -186,10 +182,7 @@ class OrderService
             }
 
             $order->update($changes);
-            $this->recordHistory($order, 'delivery_status', $oldDeliveryStatus, $status);
-            if (isset($changes['payment_status'])) {
-                $this->recordHistory($order, 'payment_status', Order::PAYMENT_PENDING, $changes['payment_status'], 'Payment collected on delivery');
-            }
+
         });
     }
 
@@ -208,9 +201,6 @@ class OrderService
         $oldPaymentStatus = $order->payment_status;
         $order->update($changes);
 
-        if (isset($changes['payment_status']) && $oldPaymentStatus !== $changes['payment_status']) {
-            $this->recordHistory($order, 'payment_status', $oldPaymentStatus, $changes['payment_status']);
-        }
     }
 
     /* ---------------- Prices ---------------- */
@@ -340,21 +330,7 @@ class OrderService
         return Order::lockForUpdate()->findOrFail($order->id);
     }
 
-    private function recordHistory(
-        Order $order,
-        string $eventType,
-        ?string $oldValue,
-        string $newValue,
-        ?string $note = null
-    ): void {
-        $order->statusHistories()->create([
-            'event_type' => $eventType,
-            'old_value' => $oldValue,
-            'new_value' => $newValue,
-            'note' => $note,
-            'changed_by' => auth()->id(),
-        ]);
-    }
+
 
     private function makeOrderNumber(): string
     {

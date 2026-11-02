@@ -344,4 +344,13 @@ return [
     'select_all' => 'تحديد الكل',
     'deselect_all' => 'إلغاء تحديد الكل',
     'Shipping price' => 'سعر الشحن',
+
+    'Add-Order' => 'إضافة طلب',
+
+    'Show-Coupons' => 'عرض الكوبونات',
+    'Add-Coupon' => 'إضافة كوبون',
+
+    'Bloggers' => 'المدونون',
+    'Show-Bloggers' => 'عرض المدونين',
+    'Add-Blogger' => 'إضافة مدون',
 ];

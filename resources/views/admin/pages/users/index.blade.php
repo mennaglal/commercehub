@@ -153,8 +153,9 @@
                 </div>
 
 
-            {{ $users->links() }}
-
+            <div class="d-flex justify-content-center">
+                {{$users->appends(request()->query())->links('vendor.pagination.medium') }}
+            </div>
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
                     const selectAll = document.getElementById('usersSelectAll');

@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -25,6 +27,17 @@ class ProductSeeder extends Seeder
                 'No categories found. Please seed categories first.'
             );
         }
+
+        // Load active variant types and their active values.
+        $variantTypes = DB::table('variant_types')
+            ->where('status', true)
+            ->get()
+            ->keyBy('name_en');
+
+        $variantValues = DB::table('variant_values')
+            ->where('status', true)
+            ->get()
+            ->groupBy('variant_type_id');
 
         $products = [
             ['name_ar' => 'تيشيرت قطني رجالي', 'name_en' => 'Men Cotton T-Shirt', 'price' => 350],
@@ -59,17 +72,32 @@ class ProductSeeder extends Seeder
             ['name_ar' => 'سجادة ديكور', 'name_en' => 'Decorative Rug', 'price' => 1000],
         ];
 
-        DB::transaction(function () use ($products, $stores, $categories) {
+        DB::transaction(function () use (
+            $products,
+            $stores,
+            $categories,
+            $variantTypes,
+            $variantValues
+        ) {
             foreach ($products as $data) {
                 $price = $data['price'];
 
+                // Determine whether this product supports variants.
+                $typeNames = $this->getVariantTypeNames(
+                    $data['name_en']
+                );
+
+                $hasVariants = ! empty($typeNames)
+                    && fake()->boolean(40);
+
                 $hasSale = fake()->boolean(35);
+
                 $salePrice = $hasSale
                     ? round($price * fake()->randomFloat(2, 0.70, 0.90), 2)
                     : null;
 
-                $hasVariants = fake()->boolean(40);
-
+                // Products with variants get their price and stock
+                // calculated from their variants below.
                 $productId = DB::table('products')->insertGetId([
                     'store_id' => $stores->random(),
                     'category_id' => $categories->random(),
@@ -85,9 +113,9 @@ class ProductSeeder extends Seeder
                     'description_ar' => 'وصف تجريبي للمنتج ' . $data['name_ar'],
                     'description_en' => 'Sample description for ' . $data['name_en'],
 
-                    'price' => $price,
-                    'sale_price' => $salePrice,
-                    'is_sale' => $hasSale,
+                    'price' => $hasVariants ? 0 : $price,
+                    'sale_price' => $hasVariants ? null : $salePrice,
+                    'is_sale' => $hasVariants ? false : $hasSale,
 
                     'stock' => $hasVariants ? 0 : rand(5, 100),
                     'sku' => 'SKU-' . Str::upper(Str::random(10)),
@@ -100,30 +128,175 @@ class ProductSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                if ($hasVariants) {
-                    $variantCount = rand(2, 4);
-
-                    for ($i = 1; $i <= $variantCount; $i++) {
-                        $variantPrice = $price + (($i - 1) * 50);
-                        $variantDiscount = fake()->boolean(25)
-                            ? round($variantPrice * 0.85, 2)
-                            : null;
-
-                        DB::table('product_variants')->insert([
-                            'product_id' => $productId,
-                            'sku' => 'VAR-' . Str::upper(Str::random(10)),
-                            'price' => $variantPrice,
-                            'discount_price' => $variantDiscount,
-                            'quantity' => rand(5, 50),
-                            'status' => 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
+                if (! $hasVariants) {
+                    continue;
                 }
+
+                $product = Product::findOrFail($productId);
+
+                // Resolve the types and their available values.
+                $selectedTypes = collect($typeNames)
+                    ->map(fn ($name) => $variantTypes->get($name))
+                    ->filter()
+                    ->filter(fn ($type) => $variantValues->has($type->id))
+                    ->filter(fn ($type) => $variantValues->get($type->id)->isNotEmpty())
+                    ->values();
+
+                if ($selectedTypes->isEmpty()) {
+                    throw new RuntimeException(
+                        "No active variant types or values found for {$data['name_en']}."
+                    );
+                }
+
+                if ($selectedTypes->count() !== count($typeNames)) {
+                    throw new RuntimeException(
+                        "Some required variant types or values are missing for {$data['name_en']}. "
+                        . 'Please run VariantSeeder first.'
+                    );
+                }
+
+                // Attach the types available for this product.
+                $product->variantTypes()->sync(
+                    $selectedTypes->pluck('id')->all()
+                );
+
+                // Generate every possible combination of selected values.
+                $combinations = [[]];
+
+                foreach ($selectedTypes as $type) {
+                    $values = $variantValues
+                        ->get($type->id)
+                        ->pluck('id')
+                        ->all();
+
+                    $nextCombinations = [];
+
+                    foreach ($combinations as $combination) {
+                        foreach ($values as $valueId) {
+                            $nextCombinations[] = array_merge(
+                                $combination,
+                                [$valueId]
+                            );
+                        }
+                    }
+
+                    $combinations = $nextCombinations;
+                }
+
+                // Pick between two and four different combinations.
+                shuffle($combinations);
+
+                $variantCount = min(
+                    count($combinations),
+                    rand(2, 4)
+                );
+
+                $combinations = array_slice(
+                    $combinations,
+                    0,
+                    $variantCount
+                );
+
+                foreach ($combinations as $index => $valueIds) {
+                    $variantPrice = $price + ($index * 50);
+
+                    $variantDiscount = fake()->boolean(25)
+                        ? round($variantPrice * 0.85, 2)
+                        : null;
+
+                    // Create the product variant.
+                    $variant = new ProductVariant();
+
+                    $variant->sku = 'VAR-' . Str::upper(Str::random(10));
+                    $variant->price = $variantPrice;
+                    $variant->discount_price = $variantDiscount;
+                    $variant->quantity = rand(5, 50);
+                    $variant->status = true;
+
+                    $product->variants()->save($variant);
+
+                    // Attach the selected values to this exact combination.
+                    $variant->values()->sync($valueIds);
+                }
+
+                // Keep listing price and stock consistent with the variants.
+                $product->update([
+                    'price' => $product->variants()->min('price'),
+                    'stock' => $product->variants()->sum('quantity'),
+                ]);
             }
         });
 
-        $this->command->info('30 sample products created successfully.');
+        $this->command->info(
+            '30 sample products created successfully with variant combinations.'
+        );
+    }
+
+    /**
+     * Return the variant types suitable for a product.
+     */
+    private function getVariantTypeNames(string $name): array
+    {
+        $name = strtolower($name);
+
+        // Clothing
+        if (
+            str_contains($name, 't-shirt')
+            || str_contains($name, 'shirt')
+            || str_contains($name, 'jeans')
+            || str_contains($name, 'dress')
+            || str_contains($name, 'jacket')
+        ) {
+            return ['Size', 'Color', 'Material'];
+        }
+
+        // Shoes
+        if (str_contains($name, 'shoes')) {
+            return ['Size', 'Color', 'Material'];
+        }
+
+        // Bags and cases
+        if (
+            str_contains($name, 'handbag')
+            || str_contains($name, 'wallet')
+            || str_contains($name, 'backpack')
+            || str_contains($name, 'phone case')
+        ) {
+            return ['Color', 'Material'];
+        }
+
+        // Accessories
+        if (
+            str_contains($name, 'watch')
+            || str_contains($name, 'sunglasses')
+        ) {
+            return ['Color'];
+        }
+
+        // Electronics
+        if (
+            str_contains($name, 'headphones')
+            || str_contains($name, 'mouse')
+            || str_contains($name, 'keyboard')
+            || str_contains($name, 'charger')
+        ) {
+            return ['Color'];
+        }
+
+        // Home and living
+        if (
+            str_contains($name, 'laptop stand')
+            || str_contains($name, 'coffee mug')
+            || str_contains($name, 'water bottle')
+            || str_contains($name, 'bed sheet')
+            || str_contains($name, 'pillow')
+            || str_contains($name, 'desk lamp')
+            || str_contains($name, 'rug')
+        ) {
+            return ['Color', 'Material'];
+        }
+
+        // Other products remain simple products.
+        return [];
     }
 }

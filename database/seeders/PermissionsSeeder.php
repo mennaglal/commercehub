@@ -29,7 +29,7 @@ class PermissionsSeeder extends Seeder
             'areas' => ['view', 'create', 'update', 'delete'],
             'variant-types' => ['view', 'create', 'update', 'delete'],
             'variant-values' => ['view', 'create', 'update', 'delete'],
-            'orders' => ['view', 'create', 'update', 'refund'],
+            'orders' => ['view', 'create', 'update', 'delete', 'refund'],
             'coupons' => ['view', 'create', 'update', 'delete'],
             'bloggers' => ['view', 'create', 'update','delete'],
             ];

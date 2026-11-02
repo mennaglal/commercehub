@@ -180,13 +180,36 @@ Route::middleware(['auth', 'role:super-admin|admin|moderator|support'])->group(f
 
     Route::resource('products',ProductController::class);
 
-    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('orders/create', [OrderController::class, 'create'])->name('orders.create');
-    Route::post('orders', [OrderController::class, 'store'])->name('orders.store');
-    Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
-    Route::patch('orders/{order}/delivery', [OrderController::class, 'updateDelivery'])->name('orders.delivery');
-    Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment');
+    // Orders
+    Route::get('orders', [OrderController::class, 'index'])
+        ->name('orders.index');
+
+    Route::get('orders/create', [OrderController::class, 'create'])
+        ->name('orders.create');
+
+    // Export MUST be before orders/{order}
+    Route::get('orders/export', [OrderController::class, 'export'])
+        ->middleware('permission:orders.view')
+        ->name('orders.export');
+
+    Route::post('orders', [OrderController::class, 'store'])
+        ->name('orders.store');
+
+
+    Route::get('orders/{order}', [OrderController::class, 'show'])
+        ->name('orders.show');
+
+    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])
+        ->name('orders.status');
+
+    Route::patch('orders/{order}/delivery', [OrderController::class, 'updateDelivery'])
+        ->name('orders.delivery');
+
+    Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])
+        ->name('orders.payment');
+
+    Route::delete('orders/{order}', [OrderController::class, 'destroy'])
+        ->name('orders.destroy');
 
     /* ---------------- Coupons ---------------- */
     Route::resource('coupons', CouponController::class)->except(['show']);

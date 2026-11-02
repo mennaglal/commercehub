@@ -349,4 +349,13 @@ return [
     'select_all' => 'Select All',
     'deselect_all' => 'Deselect All',
     'Shipping price' => 'Shipping Price',
+
+    'Add-Order' => 'Add Order',
+
+    'Show-Coupons' => 'Show Coupons',
+    'Add-Coupon' => 'Add Coupon',
+
+    'Bloggers' => 'Bloggers',
+    'Show-Bloggers' => 'Show Bloggers',
+    'Add-Blogger' => 'Add Blogger',
 ];

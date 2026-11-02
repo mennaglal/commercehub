@@ -26,7 +26,6 @@ return [
         'store' => 'Store',
         'customer' => 'Customer',
         'items' => 'Items',
-        'total' => 'Total',
         'status' => 'Status',
         'payment' => 'Payment',
         'delivery' => 'Delivery',
@@ -37,6 +36,14 @@ return [
         'unit_price' => 'Unit price',
         'quantity' => 'Qty',
         'line_total' => 'Line total',
+        'country' => 'Country',
+        'city' => 'City',
+        'area' => 'Area',
+        'coupon' => 'Coupon',
+        'subtotal' => 'Subtotal',
+        'discount' => 'Discount',
+        'shipping' => 'Shipping',
+        'total' => 'Final Total',
     ],
 
     'fields' => [

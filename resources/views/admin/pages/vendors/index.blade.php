@@ -194,8 +194,9 @@
                     </table>
                 </div>
 
-            {{ $vendors->links() }}
-
+            <div class="d-flex justify-content-center">
+                {{$vendors->appends(request()->query())->links('vendor.pagination.medium') }}
+            </div>
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
                     const selectAll = document.getElementById('vendorsSelectAll');

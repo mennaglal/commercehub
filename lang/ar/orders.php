@@ -37,6 +37,7 @@ return [
         'unit_price' => 'سعر القطعة',
         'quantity' => 'الكمية',
         'line_total' => 'إجمالي السطر',
+
     ],
 
     'fields' => [

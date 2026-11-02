@@ -222,8 +222,8 @@
                     </table>
                 </div>
 
-                <div class="mt-3">
-                    {{ $products->links() }}
+                <div class="d-flex justify-content-center">
+                    {{$products->appends(request()->query())->links('vendor.pagination.medium') }}
                 </div>
 
             </div>

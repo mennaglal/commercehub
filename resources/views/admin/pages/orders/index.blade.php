@@ -3,11 +3,29 @@
 @section('content')
     <div class="container-fluid">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+
             <h4 class="mb-0">{{ __('orders.title') }}</h4>
-            <a href="{{ route('admin.orders.create') }}" class="btn btn-primary">
-                {{ __('orders.add') }}
-            </a>
+
+            <div class="d-flex gap-2">
+
+                <a href="{{ route('admin.orders.export', request()->query()) }}"
+                   class="btn btn-success">
+
+                    <i class="fas fa-file-excel"></i>
+
+                    {{ app()->getLocale() === 'ar'
+                        ? 'تصدير كل الطلبات Excel'
+                        : 'Export All Orders Excel' }}
+
+                </a>
+
+                <a href="{{ route('admin.orders.create') }}" class="btn btn-primary">
+                    {{ __('orders.add') }}
+                </a>
+
+            </div>
+
         </div>
 
         @if(session('success'))
@@ -133,6 +151,24 @@
             </div>
 
         </form>
+        {{-- Bulk Delete Form --}}
+        <form
+            id="bulkDeleteOrdersForm"
+            method="POST"
+            action="{{ route('admin.bulk.delete') }}"
+            data-bulk-delete
+            data-selection-group="orders"
+        >
+            @csrf
+
+            <input type="hidden" name="model" value="orders">
+            <input type="hidden" name="ids">
+
+            <button type="submit" class="btn btn-danger mb-3">
+                @lang('dashboard.delete_all')
+            </button>
+        </form>
+
 
         {{-- Orders Table --}}
         <div class="card">
@@ -141,22 +177,53 @@
 
                     <thead>
                     <tr>
+                        <th>
+                            <input
+                                type="checkbox"
+                                data-select-all="orders"
+                                aria-label="Select all orders"
+                            >
+                        </th>
+                        <th>#</th>
+                        <th>ID</th>
                         <th>{{ __('orders.columns.number') }}</th>
                         <th>{{ __('orders.columns.customer') }}</th>
                         <th>{{ __('orders.columns.store') }}</th>
                         <th>{{ __('orders.columns.items') }}</th>
+                        <th>{{ __('orders.columns.country') }}</th>
+                        <th>{{ __('orders.columns.city') }}</th>
+                        <th>{{ __('orders.columns.area') }}</th>
+                        <th>{{ __('orders.columns.coupon') }}</th>
+                        <th>{{ __('orders.columns.subtotal') }}</th>
+                        <th>{{ __('orders.columns.discount') }}</th>
+                        <th>{{ __('orders.columns.shipping') }}</th>
                         <th>{{ __('orders.columns.total') }}</th>
                         <th>{{ __('orders.columns.status') }}</th>
                         <th>{{ __('orders.columns.payment') }}</th>
                         <th>{{ __('orders.columns.delivery') }}</th>
                         <th>{{ __('orders.columns.date') }}</th>
-                        <th></th>
+                        <th>{{ __('dashboard.Actions') }}</th>
                     </tr>
                     </thead>
 
                     <tbody>
                     @forelse($orders as $order)
+
                         <tr>
+                            <td>
+                                <input
+                                    type="checkbox"
+                                    data-select-item="orders"
+                                    value="{{ $order->id }}"
+                                    aria-label="Select order {{ $order->order_number }}"
+                                >
+                            </td>
+                            {{-- Index --}}
+                            <td>{{ $orders->firstItem() + $loop->index }}</td>
+
+                            {{-- Database ID --}}
+                            <td>{{ $order->id }}</td>
+
                             <td>{{ $order->order_number }}</td>
 
                             <td>
@@ -171,15 +238,39 @@
 
                             <td>{{ $order->items_count }}</td>
 
-                            <td>{{ number_format($order->total, 2) }}</td>
+                            <td>
+                                {{ $order->country?->name ?? '-' }}
+                            </td>
+
+                            <td>
+                                {{ $order->city?->name ?? '-' }}
+
+                            </td>
+
+                            <td>
+                                {{ $order->area?->name ?? '-' }}
+
+                            </td>
+
+                            <td>{{ $order->coupon_code ?: '-' }}</td>
+
+                            <td>{{ number_format((float) $order->subtotal, 2) }}</td>
+
+                            <td>{{ number_format((float) $order->discount_total, 2) }}</td>
+
+                            <td>{{ number_format((float) $order->shipping_total, 2) }}</td>
+
+                            <td>
+                                <strong>{{ number_format((float) $order->total, 2) }}</strong>
+                            </td>
 
                             <td>
                                 <span class="badge bg-{{ $order->badge('status') }}">
                                     {{ __('orders.statuses.' . $order->status) }}
                                 </span>
-                            </td>
+                                                    </td>
 
-                            <td>
+                                                    <td>
                                 <span class="badge bg-{{ $order->badge('payment_status') }}">
                                     {{ __('orders.payment_statuses.' . $order->payment_status) }}
                                 </span>
@@ -197,15 +288,33 @@
 
                             <td>{{ $order->created_at->format('Y-m-d H:i') }}</td>
 
-                            <td>
+                            <td class="text-nowrap">
                                 <a
                                     href="{{ route('admin.orders.show', $order) }}"
                                     class="btn btn-sm btn-outline-secondary"
                                 >
                                     {{ __('orders.fields.view') }}
                                 </a>
+
+                                <form
+                                    action="{{ route('admin.orders.destroy', $order) }}"
+                                    method="POST"
+                                    class="d-inline"
+                                    data-confirm-delete
+                                >
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        {{ __('dashboard.Delete') }}
+                                    </button>
+                                </form>
                             </td>
                         </tr>
+
+
+
+
                     @empty
                         <tr>
                             <td colspan="10" class="text-center text-muted py-4">
@@ -219,8 +328,8 @@
             </div>
         </div>
 
-        <div class="mt-3">
-            {{ $orders->appends(request()->query())->links() }}
+        <div class="d-flex justify-content-center">
+            {{$orders->appends(request()->query())->links('vendor.pagination.medium') }}
         </div>
 
     </div>
@@ -386,4 +495,5 @@
 
         });
     </script>
+
 @endsection

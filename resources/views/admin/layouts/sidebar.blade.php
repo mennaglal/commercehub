@@ -155,6 +155,7 @@
                         ],
                     ],
                 ],
+
                 [
                     'id' => 'orders',
                     'icon' => 'fe fe-shopping-cart',
@@ -209,6 +210,7 @@
                         ],
                     ],
                 ],
+
                 [
                     'id' => 'currencies',
                     'icon' => 'fe fe-dollar-sign',

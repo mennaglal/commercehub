@@ -45,10 +45,6 @@ class ProductController extends Controller implements HasMiddleware
     {
         $search = trim((string) $request->input('search'));
 
-        // Rows per page: only these sizes are allowed.
-        $perPage = (int) $request->input('per_page');
-        $perPage = in_array($perPage, self::PER_PAGE_OPTIONS, true) ? $perPage : self::PER_PAGE_OPTIONS[1];
-
         $products = Product::with(['store', 'category.parent'])
             ->withCount('variants') // only the number is needed, not the rows
             ->when($search !== '', function ($query) use ($search) {

@@ -181,8 +181,10 @@
             </div>
         </div>
 
-        <div class="mt-3">
-            {{ $coupons->links() }}
+
+        {{-- Pagination --}}
+        <div class="d-flex justify-content-center">
+            {{ $coupons->links('vendor.pagination.medium') }}
         </div>
     </div>
 @endsection

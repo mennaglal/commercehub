@@ -82,7 +82,9 @@
                 </table>
             </div>
 
-            {{ $variantTypes->links() }}
+            <div class="d-flex justify-content-center">
+                {{$variantTypes->appends(request()->query())->links('vendor.pagination.medium') }}
+            </div>
         </div>
     </div>
 @endsection
