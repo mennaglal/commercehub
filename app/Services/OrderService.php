@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Coupon;
 use App\Models\Order;
+use App\Models\OrderReturn;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Support\Arr;
@@ -36,12 +37,30 @@ class OrderService
             $discount = 0.0;
             $commission = 0.0;
 
+            // Each item also gets its own share of the discount and of the commission.
+            // The returns system needs them to refund exactly what the customer paid for each item.
+            $discountShares = [];
+            $commissionShares = [];
+
             if (! empty($data['coupon_code'])) {
                 $applied = $this->coupons->apply($data['coupon_code'], $lines);
 
                 $coupon = $applied['coupon'];
                 $discount = $applied['discount'];
                 $commission = $applied['commission'];
+
+                $eligibleLines = collect($lines)->only($applied['eligible_keys']);
+
+                // The discount is split by line total, the commission by what is left after the discount.
+                $discountShares = $this->allocate(
+                    $eligibleLines->map(fn ($line) => $line['line_total'])->all(),
+                    $discount
+                );
+
+                $commissionShares = $this->allocate(
+                    $eligibleLines->map(fn ($line, $key) => $line['line_total'] - ($discountShares[$key] ?? 0))->all(),
+                    $commission
+                );
             }
 
             $isOnline = $data['payment_method'] === Order::PAYMENT_ONLINE;
@@ -52,9 +71,9 @@ class OrderService
 
                 'customer_name' => $data['customer_name'],
                 'customer_phone' => $data['customer_phone'],
-                'shipping_country' => $data['shipping_country'] ?? null,
-                'shipping_city' => $data['shipping_city'] ?? null,
-                'shipping_area' => $data['shipping_area'] ?? null,
+                'country_id' => $data['country_id'] ?? null,
+                'city_id' => $data['city_id'] ?? null,
+                'area_id' => $data['area_id'] ?? null,
                 'shipping_address' => $data['shipping_address'],
                 'shipping_notes' => $data['shipping_notes'] ?? null,
                 'notes' => $data['notes'] ?? null,
@@ -77,7 +96,7 @@ class OrderService
             ]);
 
 
-            foreach ($lines as $line) {
+            foreach ($lines as $index => $line) {
                 $order->items()->create([
                     'store_id' => $line['store_id'],
                     'store_name' => $line['store_name'],
@@ -89,6 +108,8 @@ class OrderService
                     'unit_price' => $line['unit_price'],
                     'quantity' => $line['quantity'],
                     'line_total' => $line['line_total'],
+                    'discount_amount' => $discountShares[$index] ?? 0,
+                    'commission_amount' => $commissionShares[$index] ?? 0,
                 ]);
 
                 // Take the quantity out of stock (rows are locked, so two orders cannot sell the same piece).
@@ -151,6 +172,15 @@ class OrderService
                 $this->fail(__('orders.errors.delivery_not_allowed'), 'delivery_status');
             }
 
+            // A delivered order that already has customer returns is handled by the returns system.
+            // (Otherwise the same pieces would be given back to the stock twice.)
+            if (
+                $status === Order::DELIVERY_RETURNED
+                && $order->returns()->where('status', '!=', OrderReturn::STATUS_REJECTED)->exists()
+            ) {
+                $this->fail(__('returns.errors.order_has_returns'), 'delivery_status');
+            }
+
             $oldDeliveryStatus = $order->delivery_status;
             $changes = ['delivery_status' => $status];
 
@@ -192,17 +222,44 @@ class OrderService
      */
     public function updatePayment(Order $order, array $data): void
     {
-        $changes = Arr::only($data, ['payment_status', 'payment_id', 'invoice_id', 'invoice_url', 'payment_data']);
+        DB::transaction(function () use ($order, $data) {
 
-        if (($changes['payment_status'] ?? null) === Order::PAYMENT_PAID && ! $order->paid_at) {
-            $changes['paid_at'] = now();
-        }
+            $order = $this->lock($order);
 
-        $oldPaymentStatus = $order->payment_status;
-        $order->update($changes);
+            $changes = Arr::only($data, [
+                'payment_status',
+                'payment_id',
+                'invoice_id',
+                'invoice_url',
+                'payment_data',
+            ]);
 
+            if (isset($changes['payment_status'])) {
+
+                $newStatus = $changes['payment_status'];
+
+                if (
+                    $newStatus !== $order->payment_status &&
+                    ! in_array(
+                        $newStatus,
+                        Order::PAYMENT_TRANSITIONS[$order->payment_status] ?? [],
+                        true
+                    )
+                ) {
+                    $this->fail(
+                        __('orders.errors.payment_not_allowed'),
+                        'payment_status'
+                    );
+                }
+
+                if ($newStatus === Order::PAYMENT_PAID && ! $order->paid_at) {
+                    $changes['paid_at'] = now();
+                }
+            }
+
+            $order->update($changes);
+        });
     }
-
     /* ---------------- Prices ---------------- */
 
     /**
@@ -323,6 +380,37 @@ class OrderService
         }
 
         return $order->blogger_id ? ['commission_status' => Order::COMMISSION_CANCELLED] : [];
+    }
+
+    /**
+     * Splits an amount between lines, in proportion to their weights.
+     * The last line takes what is left, so the shares always add up to the exact amount (no lost cents).
+     *
+     * @param  array<int, float>  $weights  [line index => weight]
+     * @return array<int, float>            [line index => share]
+     */
+    private function allocate(array $weights, float $amount): array
+    {
+        $totalWeight = array_sum($weights);
+
+        if ($amount <= 0 || $totalWeight <= 0) {
+            return array_fill_keys(array_keys($weights), 0.0);
+        }
+
+        $shares = [];
+        $left = $amount;
+        $lastKey = array_key_last($weights);
+
+        foreach ($weights as $key => $weight) {
+            $share = $key === $lastKey
+                ? $left
+                : min(round($amount * $weight / $totalWeight, 2), $left);
+
+            $shares[$key] = $share;
+            $left = round($left - $share, 2);
+        }
+
+        return $shares;
     }
 
     private function lock(Order $order): Order

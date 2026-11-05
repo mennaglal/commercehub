@@ -32,7 +32,9 @@ class PermissionsSeeder extends Seeder
             'orders' => ['view', 'create', 'update', 'delete', 'refund'],
             'coupons' => ['view', 'create', 'update', 'delete'],
             'bloggers' => ['view', 'create', 'update','delete'],
-            ];
+            'returns' => ['view', 'create', 'update', 'refund'],
+
+        ];
 
         foreach ($modules as $module => $actions) {
             foreach ($actions as $action) {

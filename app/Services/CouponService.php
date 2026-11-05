@@ -17,7 +17,7 @@ class CouponService
 {
     /**
      * @param array $lines the order lines built by OrderService (each has 'product' and 'line_total')
-     * @return array{coupon: Coupon, discount: float, commission: float}
+     * @return array{coupon: Coupon, discount: float, commission: float, eligible_keys: int[]}
      */
     public function apply(string $code, array $lines): array
     {
@@ -47,9 +47,10 @@ class CouponService
         // Only the products of the coupon categories take part in the discount.
         $categoryIds = $this->categoryIds($coupon);
 
-        $eligible = round(collect($lines)
-            ->filter(fn ($line) => in_array((int) $line['product']->category_id, $categoryIds, true))
-            ->sum('line_total'), 2);
+        $eligibleLines = collect($lines)
+            ->filter(fn ($line) => in_array((int) $line['product']->category_id, $categoryIds, true));
+
+        $eligible = round($eligibleLines->sum('line_total'), 2);
 
         if ($eligible <= 0) {
             $this->fail(__('coupons.errors.no_eligible_items'));
@@ -83,7 +84,14 @@ class CouponService
             $commission = round(min($commission, $base), 2);
         }
 
-        return ['coupon' => $coupon, 'discount' => $discount, 'commission' => $commission];
+        // "eligible_keys" = which lines the coupon applies to (OrderService splits the discount and
+        // the commission between them, so every order item knows its own share).
+        return [
+            'coupon' => $coupon,
+            'discount' => $discount,
+            'commission' => $commission,
+            'eligible_keys' => $eligibleLines->keys()->all(),
+        ];
     }
 
     /**

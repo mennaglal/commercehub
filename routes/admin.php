@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderReturnController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\RoleController;
@@ -210,6 +211,14 @@ Route::middleware(['auth', 'role:super-admin|admin|moderator|support'])->group(f
 
     Route::delete('orders/{order}', [OrderController::class, 'destroy'])
         ->name('orders.destroy');
+
+    Route::get('returns', [OrderReturnController::class, 'index'])->name('returns.index');
+    Route::get('returns/{orderReturn}', [OrderReturnController::class, 'show'])->name('returns.show');
+    Route::patch('returns/{orderReturn}/status', [OrderReturnController::class, 'updateStatus'])->name('returns.status');
+
+// Created from an order page.
+    Route::get('orders/{order}/returns/create', [OrderReturnController::class, 'create'])->name('orders.returns.create');
+    Route::post('orders/{order}/returns', [OrderReturnController::class, 'store'])->name('orders.returns.store');
 
     /* ---------------- Coupons ---------------- */
     Route::resource('coupons', CouponController::class)->except(['show']);

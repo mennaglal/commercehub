@@ -547,7 +547,11 @@
             </div>
         </div>
 
+        {{-- ===================== Returns ===================== --}}
+        @include('admin.pages.orders._returns', ['order' => $order])
     </div>
+
+
     <script>
         function printOrderDetails() {
             const orderArea = document.getElementById('order-print-area');

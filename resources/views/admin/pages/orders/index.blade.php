@@ -268,9 +268,9 @@
                                 <span class="badge bg-{{ $order->badge('status') }}">
                                     {{ __('orders.statuses.' . $order->status) }}
                                 </span>
-                                                    </td>
+                            </td>
 
-                                                    <td>
+                            <td>
                                 <span class="badge bg-{{ $order->badge('payment_status') }}">
                                     {{ __('orders.payment_statuses.' . $order->payment_status) }}
                                 </span>

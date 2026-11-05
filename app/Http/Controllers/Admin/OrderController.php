@@ -35,7 +35,6 @@ class OrderController extends Controller
             ]),
             new Middleware('permission:orders.delete', only: [
                 'destroy',
-                'bulkDestroy',
             ]),
         ];
     }
@@ -54,7 +53,7 @@ class OrderController extends Controller
 
         // Location filters.
         $countryId = $request->integer('country_id') ?: null;
-        $cityId = $request->integer('region_id') ?: null;
+        $cityId = $request->integer('city_id') ?: null;
         $areaId = $request->integer('area_id') ?: null;
 
         $orders = Order::with([
@@ -163,6 +162,7 @@ class OrderController extends Controller
             'area',
             'items',
             'blogger',
+            'returns',
         ]);
         return view('admin.pages.orders.show', ['order' => $order]);
     }

@@ -31,6 +31,19 @@ class Order extends Model
         self::STATUS_CANCELLED => [],
     ];
 
+    public const PAYMENT_TRANSITIONS = [
+        self::PAYMENT_PENDING => [
+            self::PAYMENT_PAID,
+            self::PAYMENT_FAILED,
+        ],
+        self::PAYMENT_FAILED => [
+            self::PAYMENT_PENDING,
+        ],
+        self::PAYMENT_PAID => [
+            self::PAYMENT_REFUNDED,
+        ],
+        self::PAYMENT_REFUNDED => [],
+    ];
     /* ---------------- Delivery status ---------------- */
 
     public const DELIVERY_PENDING = 'pending';
@@ -221,6 +234,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function returns(): HasMany
+    {
+        return $this->hasMany(OrderReturn::class);
+    }
+
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
@@ -232,6 +250,14 @@ class Order extends Model
     }
 
     /* ---------------- Helpers ---------------- */
+
+    // Can the customer still return something? (delivered, and inside the return window)
+    public function canBeReturned(): bool
+    {
+        return $this->delivery_status === self::DELIVERY_DELIVERED
+            && $this->delivered_at !== null
+            && $this->delivered_at->greaterThanOrEqualTo(now()->subDays((int) config('orders.return_days', 14)));
+    }
 
     public function badge(string $column): string
     {

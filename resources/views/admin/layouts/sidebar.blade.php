@@ -175,6 +175,20 @@
                     ],
                 ],
                 [
+                    'id' => 'returns',
+                    'icon' => 'fe fe-rotate-ccw',
+                    'label' => __('dashboard.Returns'),
+                    'permission' => 'returns.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.returns.index',
+                            'text' => __('dashboard.Show-Returns'),
+                            'permission' => 'returns.view',
+                        ],
+
+                    ],
+                ],
+                [
                     'id' => 'coupons',
                     'icon' => 'fe fe-tag',
                     'label' => __('dashboard.Coupons'),

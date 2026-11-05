@@ -17,9 +17,9 @@ class StoreSeeder extends Seeder
             ->get();
 
         if ($vendors->isEmpty()) {
-            throw new RuntimeException(
-                'No available vendor users found. Please create vendor users first.'
-            );
+            $this->command->info('All vendors already have stores. Skipping.');
+
+            return;
         }
 
         $storeNames = [
