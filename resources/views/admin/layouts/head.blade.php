@@ -41,7 +41,7 @@
         :root{
             --light-primary-color: #ffd176;
             --primary-color:#d3a54b;
-            --secondary-color: #927337;
+            --secondary-color: #1D3557FF;
         }
         body{
             color: #000000;
@@ -258,7 +258,59 @@
         .category-checkbox-card span {
             overflow-wrap: anywhere;
         }
+        .sidebar-count {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
 
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+
+            padding: 0 !important;
+            margin-left: auto;
+            margin-right: 8px;
+
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: #fff !important;
+
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 24px;
+            text-align: center;
+
+            flex-shrink: 0;
+            vertical-align: middle;
+        }
+        .sidebar-left .dropdown-toggle {
+            display: flex !important;
+            align-items: center !important;
+            width: 100%;
+        }
+
+        .sidebar-left .dropdown-toggle .item-text {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .sidebar-left .sidebar-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            margin: 0 8px 0 0;
+            padding: 0;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            flex-shrink: 0;
+        }
     </style>
     @yield('style')
 </head>

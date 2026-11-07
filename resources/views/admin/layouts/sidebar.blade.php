@@ -83,6 +83,37 @@
                 ],
 
                 [
+                    'id' => 'roles',
+                    'icon' => 'fe fe-shield',
+                    'label' => __('roles.title'),
+                    'permission' => 'roles.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.roles.index',
+                            'text' => __('roles.title'),
+                            'permission' => 'roles.view',
+                        ],
+                        [
+                            'route' => 'admin.roles.create',
+                            'text' => __('roles.add'),
+                            'permission' => 'roles.create',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'permissions',
+                    'icon' => 'fe fe-lock',
+                    'label' => __('roles.permissions_title'),
+                    'permission' => 'permissions.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.permissions.index',
+                            'text' => __('roles.permissions_title'),
+                            'permission' => 'permissions.view',
+                        ],
+                    ],
+                ],
+                [
                     'id' => 'categories',
                     'icon' => 'fe fe-grid',
                     'label' => __('dashboard.Categories'),
@@ -297,6 +328,35 @@
                         ],
                     ],
                 ],
+
+                [
+                    'id' => 'pages',
+                    'icon' => 'fe fe-file-text',
+                    'label' => __('pages.title'),
+                    'permission' => 'pages.index',
+                    'items' => [
+                        [
+                            'route' => 'admin.pages.index',
+                            'text' => __('pages.title'),
+                            'permission' => 'pages.index',
+                        ],
+                    ],
+                ],
+
+                [
+                    'id' => 'contact-messages',
+                    'icon' => 'fe fe-mail',
+                    'label' => __('contact-messages.title'),
+                    'permission' => 'contact-messages.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.contact-messages.index',
+                            'text' => __('contact-messages.all_messages'),
+                            'permission' => 'contact-messages.view',
+                        ],
+                    ],
+],
+
             ];
         @endphp
 
@@ -328,7 +388,14 @@
                             class="dropdown-toggle nav-link {{ $sectionActive ? 'active' : '' }}"
                         >
                             <i class="{{ $section['icon'] }} text-primary"></i>
-                            <span class="ml-3 item-text">{{ $section['label'] }}</span>
+
+                            <span class="ml-3 item-text">
+                                {{ $section['label'] }}
+                            </span>
+
+                            <span class="sidebar-count">
+                                {{ number_format($sidebarCounts[$section['id']] ?? 0) }}
+                            </span>
                         </a>
 
                         <ul
@@ -359,7 +426,10 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const sections = [
-                    'dashboard', 'admins',
+                    'admins', 'users', 'vendors', 'roles', 'permissions',
+                    'categories', 'sub-categories', 'variant-types', 'products',
+                    'orders', 'returns', 'coupons', 'bloggers', 'currencies',
+                    'countries', 'cities', 'areas'
                 ];
 
                 sections.forEach(id => {

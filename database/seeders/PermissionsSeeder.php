@@ -33,6 +33,8 @@ class PermissionsSeeder extends Seeder
             'coupons' => ['view', 'create', 'update', 'delete'],
             'bloggers' => ['view', 'create', 'update','delete'],
             'returns' => ['view', 'create', 'update', 'refund'],
+            'pages' => ['view', 'index', 'update'],
+            'contact-messages' => ['view', 'update', 'delete'],
 
         ];
 

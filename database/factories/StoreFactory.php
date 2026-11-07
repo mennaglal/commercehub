@@ -7,9 +7,6 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
-/**
- * @extends Factory<Store>
- */
 class StoreFactory extends Factory
 {
     protected $model = Store::class;
@@ -21,7 +18,7 @@ class StoreFactory extends Factory
         return [
             'user_id' => User::factory(),
             'name' => $name,
-            'slug' => Str::slug($name),
+            'slug' => Str::slug($name) . '-' . Str::lower(Str::random(6)),
             'description' => fake()->paragraph(),
             'logo' => null,
             'banner' => null,
