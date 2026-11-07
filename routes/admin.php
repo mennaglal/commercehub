@@ -426,3 +426,11 @@ Route::middleware(['auth', 'role:super-admin|admin|moderator|support'])->group(f
             Route::put('/{id}', 'update')->name('update');
         });
 });
+
+Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+Route::get('notifications/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
+Route::get('notifications/send', [NotificationController::class, 'compose'])->name('notifications.compose');
+Route::post('notifications/send', [NotificationController::class, 'send'])->name('notifications.send');
+Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+Route::get('notifications/{id}/open', [NotificationController::class, 'open'])->name('notifications.open');
+Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
