@@ -52,6 +52,47 @@
     .finance-note { font-size:11px; color:#8b949d; margin-top:10px; }
     .finance-number { font-weight:700; white-space:nowrap; }
     @media(max-width:767px) { .stat-value {font-size:21px;} .dashboard-panel .card-body {padding:14px;} .chart-bars {gap:5px;} }
+    /* Dashboard Statistics Cards Alignment */
+    .dashboard-stat {
+        height: 100%;
+        min-height: 155px;
+    }
+
+    .dashboard-stat .card-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        min-height: 155px;
+    }
+
+    .dashboard-stat .card-body > div:first-child {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .dashboard-stat .stat-label {
+        min-height: 42px;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-stat .stat-value {
+        line-height: 1.2;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-stat .stat-note {
+        line-height: 1.5;
+        overflow-wrap: break-word;
+    }
+
+    .dashboard-stat .stat-icon {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 @endsection
 
@@ -146,22 +187,85 @@
 
 {{-- Inventory overview --}}
 <div class="row">
-    <div class="col-xl-3 col-md-6 mb-4"><div class="card dashboard-stat shadow-sm"><div class="card-body d-flex justify-content-between">
-        <div><div class="stat-label">{{ __('dashboard.stats.out_of_stock_products') }}</div><div class="stat-value">{{ number_format($outOfStockProductsCount) }}</div><div class="stat-note">{{ __('dashboard.stats.simple_out_of_stock') }}: {{ number_format($simpleOutOfStockProductsCount) }} | {{ __('dashboard.stats.variant_out_of_stock') }}: {{ number_format($variantOutOfStockProductsCount) }}</div></div>
-        <div class="stat-icon stat-red"><i class="fe fe-alert-triangle"></i></div>
-    </div></div></div>
-    <div class="col-xl-3 col-md-6 mb-4"><div class="card dashboard-stat shadow-sm"><div class="card-body d-flex justify-content-between">
-        <div><div class="stat-label">{{ __('dashboard.stats.out_of_stock_variants') }}</div><div class="stat-value">{{ number_format($outOfStockVariantsCount) }}</div><div class="stat-note">{{ __('dashboard.stats.active_variants_only') }}</div></div>
-        <div class="stat-icon stat-red"><i class="fe fe-layers"></i></div>
-    </div></div></div>
-    <div class="col-xl-3 col-md-6 mb-4"><div class="card dashboard-stat shadow-sm"><div class="card-body d-flex justify-content-between">
-        <div><div class="stat-label">{{ __('dashboard.stats.low_stock_products') }}</div><div class="stat-value">{{ number_format($lowStockProductsCount) }}</div><div class="stat-note">{{ __('dashboard.stats.low_stock_threshold') }}: {{ $lowStockThreshold }}</div></div>
-        <div class="stat-icon stat-gold"><i class="fe fe-trending-down"></i></div>
-    </div></div></div>
-    <div class="col-xl-3 col-md-6 mb-4"><div class="card dashboard-stat shadow-sm"><div class="card-body d-flex justify-content-between">
-        <div><div class="stat-label">{{ __('dashboard.stats.low_stock_variants') }}</div><div class="stat-value">{{ number_format($lowStockVariantsCount) }}</div><div class="stat-note">{{ __('dashboard.stats.variant_low_stock_note') }}</div></div>
-        <div class="stat-icon stat-gold"><i class="fe fe-alert-circle"></i></div>
-    </div></div></div>
+
+    {{-- Out of Stock Products --}}
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-stat shadow-sm">
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <div class="stat-label">{{ __('dashboard.stats.out_of_stock_products') }}</div>
+                    <div class="stat-value">{{ number_format($outOfStockProductsCount) }}</div>
+                    <div class="stat-note">
+                        {{ __('dashboard.stats.simple_out_of_stock') }}:
+                        {{ number_format($simpleOutOfStockProductsCount) }}
+                        |
+                        {{ __('dashboard.stats.variant_out_of_stock') }}:
+                        {{ number_format($variantOutOfStockProductsCount) }}
+                    </div>
+                </div>
+                <div class="stat-icon stat-red">
+                    <i class="fe fe-alert-triangle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Out of Stock Variants --}}
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-stat shadow-sm">
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <div class="stat-label">{{ __('dashboard.stats.out_of_stock_variants') }}</div>
+                    <div class="stat-value">{{ number_format($outOfStockVariantsCount) }}</div>
+                    <div class="stat-note">
+                        {{ __('dashboard.stats.active_variants_only') }}
+                    </div>
+                </div>
+                <div class="stat-icon stat-red">
+                    <i class="fe fe-layers"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Low Stock Products --}}
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-stat shadow-sm">
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <div class="stat-label">{{ __('dashboard.stats.low_stock_products') }}</div>
+                    <div class="stat-value">{{ number_format($lowStockProductsCount) }}</div>
+                    <div class="stat-note">
+                        {{ __('dashboard.stats.low_stock_products_note') }}
+                        ({{ __('dashboard.stats.low_stock_threshold') }}: {{ $lowStockThreshold }})
+                    </div>
+                </div>
+                <div class="stat-icon stat-gold">
+                    <i class="fe fe-trending-down"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Low Stock Variants --}}
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card dashboard-stat shadow-sm">
+            <div class="card-body d-flex justify-content-between">
+                <div>
+                    <div class="stat-label">{{ __('dashboard.stats.low_stock_variants') }}</div>
+                    <div class="stat-value">{{ number_format($lowStockVariantsCount) }}</div>
+                    <div class="stat-note">
+                        {{ __('dashboard.stats.variant_low_stock_note') }}
+                        ({{ __('dashboard.stats.low_stock_threshold') }}: {{ $lowStockThreshold }})
+                    </div>
+                </div>
+                <div class="stat-icon stat-gold">
+                    <i class="fe fe-alert-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 {{-- Order, delivery and payment statuses --}}
