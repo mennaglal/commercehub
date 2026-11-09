@@ -439,7 +439,6 @@
         @endforeach
 
 
-
         {{-- Collapse Memory Script --}}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
