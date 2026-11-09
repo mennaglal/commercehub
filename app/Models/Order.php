@@ -160,6 +160,7 @@ class Order extends Model
     ];
 
     protected $fillable = [
+        'user_id',
         'order_number',
         'status',
         'customer_name',
@@ -213,6 +214,12 @@ class Order extends Model
     ];
 
     /* ---------------- Relationships ---------------- */
+
+    // The customer who placed the order from the app (null for orders created by an admin).
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function country(): BelongsTo
     {

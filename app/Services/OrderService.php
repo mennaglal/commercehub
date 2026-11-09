@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Area;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderReturn;
@@ -30,7 +31,8 @@ class OrderService
             $lines = $this->buildLines($data['items']);
 
             $subtotal = round(collect($lines)->sum('line_total'), 2);
-            $shipping = round((float) ($data['shipping_total'] ?? 0), 2);
+            // Shipping is calculated by the server from the selected area (the client can never send it).
+            $shipping = $this->shippingFor($data['area_id'] ?? null);
 
             // Coupon: discount + blogger commission (both calculated here, once).
             $coupon = null;
@@ -66,6 +68,7 @@ class OrderService
             $isOnline = $data['payment_method'] === Order::PAYMENT_ONLINE;
 
             $order = Order::create([
+                'user_id' => $data['user_id'] ?? null,
                 'order_number' => $this->makeOrderNumber(),
                 'status' => Order::STATUS_PENDING,
 
@@ -310,7 +313,7 @@ class OrderService
 
         // 2) Load (and lock) everything with two queries, not one query per row.
         $products = Product::whereIn('id', collect($merged)->pluck('product_id'))
-            ->with('store:id,name')
+            ->with('store:id,name,status,approval_status')
             ->lockForUpdate()->get()->keyBy('id');
 
         $variants = ProductVariant::whereIn('id', collect($merged)->pluck('variant_id')->filter())
@@ -322,7 +325,12 @@ class OrderService
             $product = $products->get($row['product_id']);
             $variant = $row['variant_id'] ? $variants->get($row['variant_id']) : null;
 
-            if (! $product || ! $product->status) {
+            // The product, its store and the chosen variant must all be active (and the store approved).
+            if (
+                ! $product || ! $product->status
+                || ! $product->store?->status || $product->store?->approval_status !== 'approved'
+                || ($variant && ! $variant->status)
+            ) {
                 $this->fail(__('orders.errors.product_unavailable'));
             }
 
@@ -411,6 +419,47 @@ class OrderService
         }
 
         return $shares;
+    }
+
+    /**
+     * The same calculation as create(), but NOTHING is saved.
+     * The app uses it to show the cart summary (prices, coupon, shipping, total) before the customer orders.
+     */
+    public function preview(array $data): array
+    {
+        $lines = $this->buildLines($data['items']);
+
+        $subtotal = round(collect($lines)->sum('line_total'), 2);
+        $discount = 0.0;
+        $couponCode = null;
+
+        if (! empty($data['coupon_code'])) {
+            $applied = $this->coupons->apply($data['coupon_code'], $lines);
+
+            $discount = $applied['discount'];
+            $couponCode = $applied['coupon']->code;
+        }
+
+        $shipping = $this->shippingFor($data['area_id'] ?? null);
+
+        return [
+            'lines' => $lines,
+            'subtotal' => $subtotal,
+            'discount_total' => $discount,
+            'shipping_total' => $shipping,
+            'total' => round($subtotal - $discount + $shipping, 2),
+            'coupon_code' => $couponCode,
+        ];
+    }
+
+    // One shipping price per order: the price of the customer's area.
+    private function shippingFor(?int $areaId): float
+    {
+        if (! $areaId) {
+            return 0.0;
+        }
+
+        return round((float) Area::whereKey($areaId)->where('is_active', true)->value('shipping_price'), 2);
     }
 
     private function lock(Order $order): Order

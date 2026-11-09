@@ -36,6 +36,7 @@ class PermissionsSeeder extends Seeder
             'pages' => ['view', 'index', 'update'],
             'contact-messages' => ['view', 'update', 'delete'],
 
+
         ];
 
         foreach ($modules as $module => $actions) {

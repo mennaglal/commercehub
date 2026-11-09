@@ -255,6 +255,24 @@
                         ],
                     ],
                 ],
+                [
+                    'id' => 'notifications',
+                    'icon' => 'fe fe-bell',
+                    'label' => __('notifications.title'),
+                    'permission' => 'notifications.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.notifications.index',
+                            'text' => __('notifications.title'),
+                            'permission' => 'notifications.view',
+                        ],
+                        [
+                            'route' => 'admin.notifications.compose',
+                            'text' => __('notifications.send_title'),
+                            'permission' => 'notifications.send',
+                        ],
+                    ],
+                ],
 
                 [
                     'id' => 'currencies',

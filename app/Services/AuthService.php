@@ -35,6 +35,10 @@ class AuthService
             return null;
         }
 
+        // A suspended account cannot log in. (The right password is checked first,
+        // so this message does not tell a stranger that an email exists.)
+        abort_unless($user->status, 403, 'Your account is suspended');
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return [

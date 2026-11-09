@@ -56,7 +56,7 @@ class NotificationController extends Controller implements HasMiddleware
 
         return response()->json([
             'count' => $user->unreadNotifications()->count(),
-            'items' => $user->notifications()->limit(8)->get()->map(fn ($notification) => [
+            'items' => $user->notifications()->latest()->limit(8)->get()->map(fn ($notification) => [
                 'id' => $notification->id,
                 'type' => $notification->data['type'] ?? 'system',
                 'title' => AppNotification::text($notification->data, 'title'),
