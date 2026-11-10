@@ -35,7 +35,8 @@
                                   style="
                                     top: 0px;
                                     border-radius: 50%;
-                                    right: 42px; display: none;
+                                    inset-inline-end: 42px;
+                                    display: none;
                                     ">
                                 0
                             </span>
@@ -74,7 +75,7 @@
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="avatar avatar-sm mt-2">
-                <img src="{{asset('dashboard')}}/assets/avatars/face-7.jpg" alt="..." class="avatar-img rounded-circle">
+                <img src="{{asset('dashboard')}}/assets/avatars/face-5.jpg" alt="..." class="avatar-img rounded-circle">
               </span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">

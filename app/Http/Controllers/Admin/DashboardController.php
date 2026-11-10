@@ -420,6 +420,7 @@ class DashboardController extends Controller
         'orders'         => [Order::class,    'orders.delete'],
         'bloggers'       => [Blogger::class,  'bloggers.delete'],
         'coupons'        => [Coupon::class,   'coupons.delete'],
+        'returns'        => [OrderReturn::class, 'returns.delete'],
     ];
 
     public function bulkDelete(Request $request)
@@ -442,7 +443,9 @@ class DashboardController extends Controller
 
         $query->get()->each(function ($model) {
             try {
-                $model->delete();
+                DB::transaction(function () use ($model) {
+                    $model->delete();
+                });
             } catch (QueryException $exception) {
                 // Skip records that are still referenced by related records.
             }

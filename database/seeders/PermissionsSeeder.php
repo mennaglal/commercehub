@@ -32,7 +32,7 @@ class PermissionsSeeder extends Seeder
             'orders' => ['view', 'create', 'update', 'delete', 'refund'],
             'coupons' => ['view', 'create', 'update', 'delete'],
             'bloggers' => ['view', 'create', 'update','delete'],
-            'returns' => ['view', 'create', 'update', 'refund'],
+            'returns' => ['view', 'create', 'update', 'refund','delete'],
             'pages' => ['view', 'index', 'update'],
             'contact-messages' => ['view', 'update', 'delete'],
 

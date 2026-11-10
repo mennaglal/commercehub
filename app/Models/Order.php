@@ -270,4 +270,16 @@ class Order extends Model
     {
         return self::BADGES[$column][$this->{$column}] ?? 'secondary';
     }
+    protected static function booted(): void
+    {
+        static::deleting(function (Order $order) {
+
+            // Delete returns first (including their return items).
+            $order->returns()->get()->each->delete();
+
+            // Then delete order items.
+            $order->items()->delete();
+
+        });
+    }
 }

@@ -32,11 +32,35 @@
         </div>
     </form>
 
+    {{-- Bulk Delete Form --}}
+    <form
+        id="bulkDeleteReturnsForm"
+        method="POST"
+        action="{{ route('admin.bulk.delete') }}"
+        data-bulk-delete
+        data-selection-group="returns"
+    >
+        @csrf
+
+        <input type="hidden" name="model" value="returns">
+        <input type="hidden" name="ids">
+
+        <button type="submit" class="btn btn-danger mb-3">
+            @lang('dashboard.delete_all')
+        </button>
+    </form>
     <div class="card">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead>
                 <tr>
+                    <th>
+                        <input
+                            type="checkbox"
+                            data-select-all="returns"
+                            aria-label="Select all returns"
+                        >
+                    </th>
                     <th>{{ __('returns.columns.return_number') }}</th>
                     <th>{{ __('returns.columns.order') }}</th>
                     <th>{{ __('returns.columns.customer') }}</th>
@@ -51,6 +75,14 @@
                 <tbody>
                 @forelse($returns as $return)
                     <tr>
+                        <td>
+                            <input
+                                type="checkbox"
+                                data-select-item="returns"
+                                value="{{ $return->id }}"
+                                aria-label="Select return {{ $return->return_number }}"
+                            >
+                        </td>
                         <td>{{ $return->return_number }}</td>
                         <td>
                             <a href="{{ route('admin.orders.show', $return->order_id) }}">{{ $return->order?->order_number }}</a>
@@ -63,20 +95,42 @@
                             <span class="badge bg-{{ $return->badge() }}">{{ __('returns.statuses.' . $return->status) }}</span>
                         </td>
                         <td>{{ $return->created_at->format('Y-m-d H:i') }}</td>
-                        <td>
-                            <a href="{{ route('admin.returns.show', $return) }}" class="btn btn-sm btn-outline-secondary">
+                        <td class="text-nowrap">
+
+                            <a
+                                href="{{ route('admin.returns.show', $return) }}"
+                                class="btn btn-sm btn-outline-secondary"
+                            >
                                 {{ __('returns.view') }}
                             </a>
+
+                            <form
+                                action="{{ route('admin.returns.destroy', $return) }}"
+                                method="POST"
+                                class="d-inline"
+                                data-confirm-delete
+                            >
+                                @csrf
+                                @method('DELETE')
+
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    {{ __('dashboard.Delete') }}
+                                </button>
+                            </form>
+
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="text-center text-muted py-4">{{ __('returns.empty') }}</td></tr>
+                    <td colspan="10" class="text-center text-muted py-4">
+                        {{ __('returns.empty') }}
+                    </td>
                 @endforelse
                 </tbody>
             </table>
         </div>
     </div>
-
-    <div class="mt-3">{{ $returns->links() }}</div>
+    <div class="d-flex justify-content-center">
+        {{$returns->appends(request()->query())->links('vendor.pagination.medium') }}
+    </div>
 </div>
 @endsection

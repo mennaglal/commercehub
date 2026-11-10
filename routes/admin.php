@@ -314,6 +314,8 @@ Route::middleware(['auth', 'role:super-admin|admin|moderator|support'])->group(f
             Route::get('/', 'index')->name('index');
             Route::get('/{orderReturn}', 'show')->name('show');
             Route::patch('/{orderReturn}/status', 'updateStatus')->name('status');
+            Route::delete('/returns/{orderReturn}',  'destroy')
+                ->name('destroy');
         });
 
     Route::prefix('orders/{order}/returns')

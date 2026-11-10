@@ -10,6 +10,7 @@ use App\Services\ReturnService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class OrderReturnController extends Controller implements HasMiddleware
@@ -23,8 +24,8 @@ class OrderReturnController extends Controller implements HasMiddleware
         return [
             new Middleware('permission:returns.view', only: ['index', 'show']),
             new Middleware('permission:returns.create', only: ['create', 'store']),
-            // The refund step needs one more permission (checked inside updateStatus).
             new Middleware('permission:returns.update', only: ['updateStatus']),
+            new Middleware('permission:returns.delete', only: ['destroy']),
         ];
     }
 
@@ -102,5 +103,13 @@ class OrderReturnController extends Controller implements HasMiddleware
         $this->returns->changeStatus($orderReturn, $data['status'], $data, $request->user()?->id);
 
         return back()->with('success', __('returns.messages.updated'));
+    }
+    public function destroy(OrderReturn $orderReturn)
+    {
+        DB::transaction(function () use ($orderReturn) {
+            $orderReturn->delete();
+        });
+
+        return back()->with('success', __('messages.deleted'));
     }
 }

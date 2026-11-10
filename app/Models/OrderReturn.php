@@ -77,4 +77,10 @@ class OrderReturn extends Model
     {
         return self::BADGES[$this->status] ?? 'secondary';
     }
+    protected static function booted(): void
+    {
+        static::deleting(function (OrderReturn $orderReturn) {
+            $orderReturn->items()->delete();
+        });
+    }
 }
