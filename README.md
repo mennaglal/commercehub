@@ -15,6 +15,7 @@ The platform is designed around three main user groups:
 - [Platform overview](#platform-overview)
 - [Main features](#main-features)
 - [Technology stack](#technology-stack)
+- [Screenshots](#screenshots)
 - [Application architecture](#application-architecture)
 - [Project structure](#project-structure)
 - [API overview](#api-overview)
@@ -199,6 +200,78 @@ The repository confirms the following technologies and packages by usage in the 
 The exact framework and package versions should be taken from the project's `composer.json` and lock file.
 
 ---
+
+## Screenshots
+
+The following screenshots showcase the main modules of the CommerceHub administration dashboard.
+
+### 1. Admin Dashboard
+
+![Dashboard 1](docs/screenshots/dashboard1.png)
+![Dashboard 2](docs/screenshots/dashboard2.png)
+![Dashboard 3](docs/screenshots/dashboard3.png)
+![Dashboard 4](docs/screenshots/dashboard4.png)
+![Dashboard 5](docs/screenshots/dashboard5.png)
+![Dashboard 6](docs/screenshots/dashboard6.png)
+![Dashboard 7](docs/screenshots/dashboard7.png)
+![Dashboard 8](docs/screenshots/dashboard8.png)
+![Dashboard 11](docs/screenshots/dashboard11.png)
+
+### 2. Product Variants Management
+
+![Product Variant Types 1](docs/screenshots/variantype3.png)
+![Product Variant Types 2](docs/screenshots/variantype4.png)
+
+### 3. Product Management
+
+![Products 1](docs/screenshots/product1.png)
+![Products 2](docs/screenshots/product2.png)
+![Products 3](docs/screenshots/product3.png)
+![Products 4](docs/screenshots/product4.png)
+![Products 5](docs/screenshots/product5.png)
+![Products 6](docs/screenshots/product6.png)
+
+### 4. Users & Access Management
+
+![Users](docs/screenshots/user.png)
+
+#### Roles & Permissions
+
+![Roles](docs/screenshots/role.png)
+![Roles Management](docs/screenshots/role2.png)
+![Permissions](docs/screenshots/permission.png)
+![Permissions Management](docs/screenshots/permission2.png)
+
+### 5. Vendor Management
+
+![Vendors](docs/screenshots/vendor.png)
+
+### 6. Currency Management
+
+![Currencies](docs/screenshots/currenct.png)
+
+### 7. Coupon Management
+
+![Coupons](docs/screenshots/coupon.png)
+
+### 8. Order Management
+
+![Orders 1](docs/screenshots/order1.png)
+![Orders 2](docs/screenshots/order2.png)
+![Orders 3](docs/screenshots/order3.png)
+
+### 9. Returns & Refunds Management
+
+![Returns 1](docs/screenshots/return1.png)
+![Returns 2](docs/screenshots/return2.png)
+![Returns 3](docs/screenshots/return3.png)
+![Returns 4](docs/screenshots/return4.png)
+![Returns 5](docs/screenshots/return5.png)
+![Returns 6](docs/screenshots/return6.png)
+
+### 10. Notifications Management
+
+![Notifications](docs/screenshots/notification.png)
 
 ## Application architecture
 
