@@ -11,6 +11,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -31,7 +32,7 @@ class VendorProductService
 
     public function paginate(Store $store, ?string $search, int $perPage): LengthAwarePaginator
     {
-        return $store->products()
+        return $store->products()->with('category.parent')
             ->when($search, function ($query) use ($search) {
                 $term = '%' . addcslashes($search, '%_\\') . '%';
 
@@ -43,7 +44,7 @@ class VendorProductService
 
     public function find(Store $store, int|string $id): Product
     {
-        return $store->products()->with('variants.values')->findOrFail($id);
+        return $store->products()->with(['category.parent', 'variants.values'])->findOrFail($id);
     }
 
     public function create(Store $store, array $data, ?UploadedFile $image): Product
@@ -61,6 +62,7 @@ class VendorProductService
         $product = $store->products()->findOrFail($id);
 
         $product->update(['status' => ! $product->status]);
+        Cache::forget("vendor_dashboard:{$store->id}");
 
         return $product;
     }
@@ -78,6 +80,7 @@ class VendorProductService
         }
 
         $this->images->delete($image);
+        Cache::forget("vendor_dashboard:{$store->id}");
 
         return true;
     }
@@ -137,6 +140,8 @@ class VendorProductService
         if ($newImage) {
             $this->images->delete($oldImage);
         }
+
+        Cache::forget("vendor_dashboard:{$store->id}");
 
         return $product->load('variants.values');
     }

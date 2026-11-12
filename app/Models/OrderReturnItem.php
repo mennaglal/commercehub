@@ -12,6 +12,7 @@ class OrderReturnItem extends Model
     protected $fillable = [
         'order_return_id', 'order_item_id',
         'quantity', 'refund_amount', 'commission_amount', 'restock',
+        'vendor_status', 'vendor_note', 'vendor_processed_at',
     ];
 
     protected $casts = [
@@ -19,6 +20,7 @@ class OrderReturnItem extends Model
         'refund_amount' => 'decimal:2',
         'commission_amount' => 'decimal:2',
         'restock' => 'boolean',
+        'vendor_processed_at' => 'datetime',
     ];
 
     public function orderReturn(): BelongsTo

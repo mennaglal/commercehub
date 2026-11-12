@@ -83,8 +83,14 @@ class VendorService
             }
         }
 
+        $storeChanges = Arr::only($data, ['name', 'description', 'country_id', 'city_id', 'area_id']) + $new;
+
+        if (isset($storeChanges['name']) && $storeChanges['name'] !== $store->name) {
+            $storeChanges['slug'] = $this->generateUniqueSlug($storeChanges['name']);
+        }
+
         try {
-            $store->update(Arr::only($data, ['name', 'description', 'country_id', 'city_id', 'area_id']) + $new);
+            $store->update($storeChanges);
         } catch (Throwable $e) {
             foreach ($new as $path) {
                 $this->images->delete($path);
