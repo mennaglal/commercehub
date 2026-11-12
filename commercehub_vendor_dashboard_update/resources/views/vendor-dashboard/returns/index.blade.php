@@ -1,6 +1,0 @@
-@extends('vendor-dashboard.layouts.app')
-@section('title', __('My Returns'))
-@section('content')
-<div class="mb-4"><h3>{{ __('My Returns') }}</h3><p class="text-muted">{{ __('Only return items belonging to your store are displayed.') }}</p></div>
-<div class="card shadow-sm"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>{{ __('Return') }}</th><th>{{ __('Order') }}</th><th>{{ __('Date') }}</th><th>{{ __('Your Items') }}</th><th>{{ __('Vendor Item Status') }}</th><th></th></tr></thead><tbody>@forelse($returns as $return)<tr><td>{{ $return->return_number }}</td><td>{{ $return->order?->order_number }}</td><td>{{ $return->created_at->format('Y-m-d') }}</td><td>{{ $return->items->count() }}</td><td>@foreach($return->items as $item)<span class="badge badge-info mr-1">{{ ucfirst($item->vendor_status ?? 'requested') }}</span>@endforeach</td><td><a class="btn btn-sm btn-outline-primary" href="{{ route('vendor.returns.show', $return->id) }}">{{ __('Details') }}</a></td></tr>@empty<tr><td colspan="6" class="text-center text-muted py-5">{{ __('No returns found') }}</td></tr>@endforelse</tbody></table></div><div class="card-body">{{ $returns->links() }}</div></div>
-@endsection

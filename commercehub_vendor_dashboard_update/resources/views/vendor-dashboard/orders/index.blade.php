@@ -1,6 +1,0 @@
-@extends('vendor-dashboard.layouts.app')
-@section('title', __('My Orders'))
-@section('content')
-<div class="mb-4"><h3>{{ __('My Orders') }}</h3><p class="text-muted">{{ __('Orders containing products from your store only') }}</p></div>
-<div class="card shadow-sm"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>{{ __('Order') }}</th><th>{{ __('Date') }}</th><th>{{ __('Order Status') }}</th><th>{{ __('Delivery') }}</th><th>{{ __('Your Items') }}</th><th>{{ __('Your Subtotal') }}</th><th></th></tr></thead><tbody>@forelse($orders as $order)<tr><td><strong>{{ $order->order_number }}</strong></td><td>{{ $order->created_at->format('Y-m-d H:i') }}</td><td>{{ ucfirst($order->status) }}</td><td>{{ ucfirst($order->delivery_status) }}</td><td>{{ $order->items->count() }}</td><td>{{ number_format($order->items->sum(fn($i) => (float)$i->line_total - (float)$i->discount_amount), 2) }}</td><td><a href="{{ route('vendor.orders.show', $order->order_number) }}" class="btn btn-sm btn-outline-primary">{{ __('Invoice / Details') }}</a></td></tr>@empty<tr><td colspan="7" class="text-center py-5 text-muted">{{ __('No orders found') }}</td></tr>@endforelse</tbody></table></div><div class="card-body">{{ $orders->links() }}</div></div>
-@endsection
