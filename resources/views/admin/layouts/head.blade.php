@@ -1155,6 +1155,77 @@
         .btn:not(.btn-group .btn) + .btn:not(.btn-group .btn) {
             margin-inline-start: 6px;
         }
+        /* Products Table */
+        .table thead th,.table tbody td {
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        /* Fix Arabic text clipping inside select boxes */
+        select,
+        select.form-control,
+        .form-select {
+            height: 40px;
+            min-height: 40px;
+            line-height: 1.8 !important;
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        /* ========================================
+           Admin Tables - Shared Style
+        ======================================== */
+
+        .admin-table {
+            width: 100%;
+            margin-bottom: 0;
+            vertical-align: middle;
+            color: #111;
+        }
+
+        .admin-table thead th {
+            background-color: #fff;
+            color: #111;
+            font-weight: 600;
+            white-space: nowrap;
+            padding: 14px 12px;
+            border-top: 0;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+
+        .admin-table tbody td {
+            padding: 14px 12px;
+            vertical-align: middle;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .admin-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .admin-table.table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Table Card */
+        .admin-table-card {
+            border: 1px solid #e3e8ee;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: none;
+        }
+        /* Hide sidebar counts when sidebar is collapsed */
+        .vertical.collapsed .sidebar-count {
+            display: none !important;
+        }
+
+        /* Keep counts visible when sidebar is expanded */
+        .vertical:not(.collapsed) .sidebar-count {
+            display: inline-flex !important;
+        }
     </style>
 
     </style>

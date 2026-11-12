@@ -111,5 +111,5 @@ Shop.pages.shop = function () {
 
     // Start: the categories first (for the tree and the chips), then the products
     fillForm();
-    Shop.api.get('/categories').then((res) => { categories = res.data; }).catch(() => {}).then(load);
+    Shop.catalog.categories().then((list) => { categories = list; }).catch(() => {}).then(load);
 };

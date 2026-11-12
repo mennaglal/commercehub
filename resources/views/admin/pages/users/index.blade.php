@@ -12,8 +12,11 @@
             @endcan
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ route('admin.users.index') }}" class="form-inline mb-3">
-                <input type="text" name="search" value="{{ request('search') }}" class="form-control mr-2" placeholder="{{ __('dashboard.users_vendors.search_users_placeholder') }}">
+            <form method="GET" action="{{ route('admin.users.index') }}" class="row mb-3">
+                <div class="col-6">
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control mr-2" placeholder="{{ __('dashboard.users_vendors.search_users_placeholder') }}">
+
+                </div>
                 <button class="btn btn-primary" type="submit">{{ __('dashboard.users_vendors.search') }}</button>
                 <a href="{{ route('admin.users.index') }}" class="btn btn-light ml-2">{{ __('dashboard.users_vendors.reset') }}</a>
             </form>

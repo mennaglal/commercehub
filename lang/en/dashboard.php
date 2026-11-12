@@ -302,8 +302,8 @@ return [
 
 
     'variant_types' => [
-        'title' => 'Variant Types',
-        'add' => 'Add Variant Type',
+        'title' => 'Product Variants',
+        'add' => 'Add Product Variants',
         'edit' => 'Edit Variant Type',
         'name_ar' => 'Arabic Name',
         'name_en' => 'English Name',

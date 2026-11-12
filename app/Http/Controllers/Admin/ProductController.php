@@ -41,26 +41,81 @@ class ProductController extends Controller implements HasMiddleware
         ];
     }
 
+
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
 
-        $products = Product::with(['store', 'category.parent'])
-            ->withCount('variants') // only the number is needed, not the rows
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name_ar', 'like', "%{$search}%")
-                        ->orWhere('name_en', 'like', "%{$search}%")
-                        ->orWhere('sku', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
-                });
-            })
+        // Product statistics (all products, independent of filters).
+        $statistics = Product::query()
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active')
+            ->selectRaw('SUM(CASE WHEN stock = 0 THEN 1 ELSE 0 END) as out_of_stock')
+            ->selectRaw(
+                'SUM(CASE WHEN stock > 0 AND stock <= ? THEN 1 ELSE 0 END) as low_stock',
+                [Product::LOW_STOCK_THRESHOLD]
+            )
+            ->selectRaw('SUM(CASE WHEN has_variants = 1 THEN 1 ELSE 0 END) as variable')
+            ->first();
+
+        // Products query.
+        $query = Product::with(['store', 'category.parent'])
+            ->withCount('variants');
+
+        // Search.
+        $query->when($search !== '', function ($q) use ($search) {
+            $q->where(function ($subQuery) use ($search) {
+                $subQuery->where('name_ar', 'like', "%{$search}%")
+                    ->orWhere('name_en', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%");
+            });
+        });
+
+        // Product status.
+        $query->when($request->filled('status'), function ($q) use ($request) {
+            $q->where('status', $request->status === 'active');
+        });
+
+        // Stock status.
+        $query->when($request->filled('stock_status'), function ($q) use ($request) {
+            switch ($request->stock_status) {
+                case 'in_stock':
+                    $q->where('stock', '>', Product::LOW_STOCK_THRESHOLD);
+                    break;
+
+                case 'low_stock':
+                    $q->where('stock', '>', 0)
+                        ->where('stock', '<=', Product::LOW_STOCK_THRESHOLD);
+                    break;
+
+                case 'out_of_stock':
+                    $q->where('stock', '<=', 0);
+                    break;
+            }
+        });
+
+        // Product type.
+        $query->when($request->filled('type'), function ($q) use ($request) {
+            $q->where('has_variants', $request->type === 'variable');
+        });
+
+        // Sale status.
+        $query->when($request->filled('sale'), function ($q) use ($request) {
+            $q->where('is_sale', $request->sale === 'yes');
+        });
+
+        $products = $query
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.pages.products.index', compact('products'));
+        return view('admin.pages.products.index', compact(
+            'products',
+            'statistics'
+        ));
     }
+
 
     public function create()
     {

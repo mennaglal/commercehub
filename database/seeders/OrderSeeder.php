@@ -236,7 +236,7 @@ class OrderSeeder extends Seeder
             }
 
             // Spread order dates across the last 30 days.
-            $orderDate = now()->subDays(rand(0, 30));
+            $orderDate = now()->subDays(rand(0, 15));
 
             $order->forceFill([
                 'created_at' => $orderDate,

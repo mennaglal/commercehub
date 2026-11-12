@@ -463,25 +463,30 @@
             return '<span class="status ' + ((colors[group] || {})[value] || 'secondary') + '">' + Shop.esc(Shop.t('status.' + group + '.' + value)) + '</span>';
         },
 
-        // ---- the product card used in every list
+        // ---- the product card used in every list: picture, discount badge, price and a full width button
         productCard(product) {
             const url = '/products/' + encodeURIComponent(product.slug);
-            const hasOld = product.is_sale && product.sale_price !== null;
-            const canQuickAdd = !product.has_variants && product.in_stock;
+            const hasOld = product.is_sale && product.sale_price !== null && product.price > product.final_price;
+            const off = hasOld ? Math.round((1 - product.final_price / product.price) * 100) : 0;
 
             const badge = !product.in_stock
                 ? '<span class="badge-out">' + Shop.esc(Shop.t('product.out_of_stock')) + '</span>'
-                : (hasOld ? '<span class="badge-sale">' + Shop.esc(Shop.t('product.sale')) + '</span>' : '');
+                : (hasOld ? '<span class="badge-sale">-' + off + '%</span>' : '');
 
-            const quick = canQuickAdd
-                ? '<button type="button" class="btn btn-brand btn-icon quick-add" data-quick-add data-id="' + product.id + '" data-name="' + Shop.esc(product.name)
+            let cta;
+
+            if (!product.in_stock) {
+                cta = '<button type="button" class="btn btn-soft" disabled>' + Shop.esc(Shop.t('product.out_of_stock')) + '</button>';
+            } else if (product.has_variants) {
+                cta = '<a class="btn btn-soft" href="' + url + '"><i class="bi bi-sliders me-1"></i>' + Shop.esc(Shop.t('product.select_options')) + '</a>';
+            } else {
+                cta = '<button type="button" class="btn btn-accent" data-quick-add data-id="' + product.id + '" data-name="' + Shop.esc(product.name)
                     + '" data-slug="' + Shop.esc(product.slug) + '" data-image="' + Shop.esc(product.image_url || '') + '" data-price="' + Shop.esc(product.final_price)
-                    + '" aria-label="' + Shop.esc(Shop.t('product.add_to_cart')) + '"><i class="bi bi-bag-plus"></i></button>'
-                : '';
+                    + '"><i class="bi bi-bag-plus me-1"></i>' + Shop.esc(Shop.t('product.add_to_cart')) + '</button>';
+            }
 
             return '<div class="col-6 col-md-4 col-xl-3"><div class="product-card">'
                 + '<a class="thumb" href="' + url + '">' + badge + '<img loading="lazy" src="' + Shop.esc(Shop.img(product.image_url)) + '" alt="' + Shop.esc(product.name) + '"></a>'
-                + quick
                 + '<div class="body">'
                 + (product.store ? '<a class="store" href="/stores/' + encodeURIComponent(product.store.slug) + '">' + Shop.esc(product.store.name) + '</a>' : '')
                 + '<a class="name" href="' + url + '">' + Shop.esc(product.name) + '</a>'
@@ -489,7 +494,7 @@
                 + (product.price_is_from ? '<span class="price-from">' + Shop.esc(Shop.t('product.from')) + '</span>' : '')
                 + Shop.currency.html(product.final_price, 'price-now')
                 + (hasOld ? Shop.currency.html(product.price, 'price-old') : '')
-                + '</div></div></div></div>';
+                + '</div><div class="cta">' + cta + '</div></div></div></div>';
         },
 
         // ---- the store card (home page and stores page)
@@ -553,6 +558,25 @@
             return '<div class="timeline">' + steps.map((step, position) =>
                 '<div class="t-step ' + (index >= position ? 'done' : '') + '"><div class="t-dot"><i class="bi ' + icons[position] + '"></i></div>'
                 + Shop.esc(Shop.t('status.delivery.' + step)) + '</div>').join('') + '</div>';
+        },
+    };
+
+    /* ---------------------------------------------------------------- Categories
+       Used by the menu, the home page and the shop page: loaded once, kept 10 minutes in the browser. */
+    Shop.catalog = {
+        categories() {
+            const key = 'shop_categories_' + APP.locale;
+            const cached = Shop.store.get(key, null);
+
+            if (cached && Date.now() - cached.time < 10 * 60 * 1000) {
+                return Promise.resolve(cached.list);
+            }
+
+            return Shop.api.get('/categories').then((res) => {
+                Shop.store.set(key, { time: Date.now(), list: res.data });
+
+                return res.data;
+            });
         },
     };
 
@@ -661,6 +685,17 @@
             $('.js-currency-label').text(Shop.currency.current.code);
             $menu.find('.dropdown-item').removeClass('active').filter('[data-currency="' + $(this).data('currency') + '"]').addClass('active');
         });
+
+        // The strip of categories and the big menu "All categories"
+        Shop.catalog.categories().then((list) => {
+            const link = (category, text) => '<a href="/shop?category_id=' + category.id + '">' + Shop.esc(text || category.name) + '</a>';
+
+            $('.js-cat-list').html(list.map((category) => link(category)).join('')
+                + '<a class="deal" href="/shop?on_sale=1"><i class="bi bi-lightning-charge-fill"></i> ' + Shop.esc(Shop.t('home.deals')) + '</a>');
+
+            $('#mega-grid').html(list.map((category) => '<div><h6>' + link(category) + '</h6>'
+                + (category.children || []).map((child) => link(child)).join('') + '</div>').join(''));
+        }).catch(() => {});
 
         // Search boxes go to the shop page
         $('.js-search-form').on('submit', function (event) {

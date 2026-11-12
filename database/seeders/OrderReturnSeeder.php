@@ -9,22 +9,25 @@ use Illuminate\Database\Seeder;
 
 class OrderReturnSeeder extends Seeder
 {
+    private const RETURNS_COUNT = 25;
+
     public function run(): void
     {
         $returnService = app(ReturnService::class);
 
-        // Get delivered orders that do not already have return requests.
+        // Get eligible delivered orders without existing return requests.
         $orders = Order::query()
             ->where('delivery_status', Order::DELIVERY_DELIVERED)
             ->whereDoesntHave('returns')
             ->with('items')
             ->get()
             ->filter(fn (Order $order) => $order->canBeReturned())
-            ->take(5)
+            ->shuffle()
+            ->take(self::RETURNS_COUNT)
             ->values();
 
         if ($orders->isEmpty()) {
-            $this->command->info(
+            $this->command->warn(
                 'No eligible orders found for return requests. Skipping.'
             );
 
@@ -32,6 +35,14 @@ class OrderReturnSeeder extends Seeder
         }
 
         $created = 0;
+
+        $statuses = [
+            OrderReturn::STATUS_REQUESTED,
+            OrderReturn::STATUS_APPROVED,
+            OrderReturn::STATUS_RECEIVED,
+            OrderReturn::STATUS_REFUNDED,
+            OrderReturn::STATUS_REJECTED,
+        ];
 
         foreach ($orders as $index => $order) {
 
@@ -48,40 +59,42 @@ class OrderReturnSeeder extends Seeder
                 rand(1, min(2, $availableItems->count()))
             );
 
-            // Build the quantities using the order item IDs.
+            // Build return quantities using order item IDs.
             $returnItems = [];
 
             foreach ($selectedItems as $item) {
                 $returnItems[$item->id] = rand(1, $item->quantity);
             }
 
-            // Create the return through the actual business service.
+            // Create return request through the business service.
             $return = $returnService->create($order, [
-                'reason' => fake()->randomElement(
-                    OrderReturn::REASONS
-                ),
+                'reason' => fake()->randomElement(OrderReturn::REASONS),
                 'customer_note' => fake()->sentence(),
                 'items' => $returnItems,
             ]);
 
-            // Distribute different return statuses.
-            switch ($index % 5) {
+            // Distribute return statuses evenly.
+            $status = $statuses[$index % count($statuses)];
 
-                case 0:
-                    // Requested: waiting for admin approval.
+            switch ($status) {
+
+                case OrderReturn::STATUS_REQUESTED:
+                    // Waiting for admin approval.
                     break;
 
-                case 1:
-                    // Approved: waiting for returned products.
+                case OrderReturn::STATUS_APPROVED:
+                    // Approved, waiting for returned products.
                     $returnService->changeStatus(
                         $return,
                         OrderReturn::STATUS_APPROVED,
-                        ['admin_note' => 'Return request approved.']
+                        [
+                            'admin_note' => 'Return request approved.',
+                        ]
                     );
                     break;
 
-                case 2:
-                    // Received: products arrived and were inspected.
+                case OrderReturn::STATUS_RECEIVED:
+                    // Products received and inspected.
                     $returnService->changeStatus(
                         $return,
                         OrderReturn::STATUS_APPROVED
@@ -102,8 +115,8 @@ class OrderReturnSeeder extends Seeder
                     );
                     break;
 
-                case 3:
-                    // Refunded: complete return and refund process.
+                case OrderReturn::STATUS_REFUNDED:
+                    // Complete return and refund process.
                     $returnService->changeStatus(
                         $return,
                         OrderReturn::STATUS_APPROVED
@@ -117,20 +130,23 @@ class OrderReturnSeeder extends Seeder
                     $returnService->changeStatus(
                         $return,
                         OrderReturn::STATUS_RECEIVED,
-                        ['restock' => $restock]
+                        [
+                            'restock' => $restock,
+                        ]
                     );
 
                     $returnService->changeStatus(
                         $return,
                         OrderReturn::STATUS_REFUNDED,
                         [
-                            'refund_reference' => 'REF-' . fake()->unique()->numerify('##########'),
+                            'refund_reference' => 'REF-' .
+                                fake()->unique()->numerify('##########'),
                         ]
                     );
                     break;
 
-                case 4:
-                    // Rejected: request was not approved.
+                case OrderReturn::STATUS_REJECTED:
+                    // Request rejected by admin.
                     $returnService->changeStatus(
                         $return,
                         OrderReturn::STATUS_REJECTED,
@@ -147,5 +163,20 @@ class OrderReturnSeeder extends Seeder
         $this->command->info(
             "{$created} sample return requests created successfully."
         );
+
+        // Display actual status distribution.
+        $this->command->newLine();
+        $this->command->info('Return Status Distribution:');
+
+        foreach (OrderReturn::STATUSES as $status) {
+            $count = OrderReturn::query()
+                ->whereIn('order_id', $orders->pluck('id'))
+                ->where('status', $status)
+                ->count();
+
+            $this->command->line(
+                ucfirst($status) . ': ' . $count
+            );
+        }
     }
 }

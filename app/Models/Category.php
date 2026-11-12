@@ -17,7 +17,14 @@ class Category extends Model
         'image',
         'parent_id',
     ];
+    protected $appends = ['name_lang'];
 
+    public function getNameLangAttribute(): string
+    {
+        return (app()->getLocale() == "ar")
+            ? $this->name_ar
+            : $this->name;
+    }
     // Parent category.
     public function parent(): BelongsTo
     {

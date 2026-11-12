@@ -11,6 +11,13 @@ return [
     'empty' => 'لا توجد طلبات.',
     'all' => 'الكل',
     'none' => '-',
+    'export' => 'تصدير كل الطلبات Excel',
+    'reset_filters' => 'إعادة تعيين الفلاتر',
+    'all_countries' => 'كل الدول',
+    'all_cities' => 'كل المدن',
+    'all_areas' => 'كل المناطق',
+    'shipping_price' => 'سعر الشحن:',
+    'shipping_price_format' => ':area - :price',
 
     'sections' => [
         'customer' => 'العميل',
@@ -37,7 +44,13 @@ return [
         'unit_price' => 'سعر القطعة',
         'quantity' => 'الكمية',
         'line_total' => 'إجمالي السطر',
-
+        'country' => 'الدولة',
+        'city' => 'المدينة',
+        'area' => 'المنطقة',
+        'coupon' => 'الكوبون',
+        'subtotal' => 'المجموع الفرعي',
+        'discount' => 'الخصم',
+        'shipping' => 'الشحن',
     ],
 
     'fields' => [

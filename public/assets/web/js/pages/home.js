@@ -1,14 +1,14 @@
 /* Home page: categories, deals, new arrivals, top stores. Every block loads on its own, so one slow block never blocks the others. */
 Shop.pages.home = function () {
     // Categories (main categories only)
-    Shop.api.get('/categories').then((res) => {
-        const html = res.data.map((category) =>
+    Shop.catalog.categories().then((list) => {
+        const html = list.map((category) =>
             '<a class="cat-chip" href="/shop?category_id=' + category.id + '"><div class="bubble">'
             + (category.image_url ? '<img loading="lazy" src="' + Shop.esc(category.image_url) + '" alt="">' : '<i class="bi bi-grid"></i>')
             + '</div><span>' + Shop.esc(category.name) + '</span></a>').join('');
 
         $('#home-categories').html(html || '');
-        $('#home-categories-box').toggleClass('d-none', !res.data.length);
+        $('#home-categories-box').toggleClass('d-none', !list.length);
     }).catch(() => $('#home-categories-box').addClass('d-none'));
 
     const loadProducts = (selector, params) => {

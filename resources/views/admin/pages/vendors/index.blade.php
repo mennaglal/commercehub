@@ -12,8 +12,11 @@
             @endcan
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ route('admin.vendors.index') }}" class="form-inline mb-3">
-                <input name="search" value="{{ request('search') }}" class="form-control mr-2" placeholder="{{ __('dashboard.users_vendors.search_vendors_placeholder') }}">
+            <form method="GET" action="{{ route('admin.vendors.index') }}" class="row mb-3">
+                <div class="col-6">
+                    <input name="search" value="{{ request('search') }}" class="form-control mr-2" placeholder="{{ __('dashboard.users_vendors.search_vendors_placeholder') }}">
+
+                </div>
                 <button class="btn btn-primary" type="submit">{{ __('dashboard.users_vendors.search') }}</button>
                 <a href="{{ route('admin.vendors.index') }}" class="btn btn-light ml-2">{{ __('dashboard.users_vendors.reset') }}</a>
             </form>
@@ -35,6 +38,8 @@
                         <tr>
                             <th><input type="checkbox" id="vendorsSelectAll"></th>
                             <th>#</th>
+                            <th>{{ __('dashboard.users_vendors.store_logo') }}</th>
+                            <th>{{ __('dashboard.users_vendors.store_banner') }}</th>
                             <th>{{ __('dashboard.users_vendors.vendor_name') }}</th>
                             <th>{{ __('dashboard.users_vendors.email') }}</th>
                             <th>{{ __('dashboard.users_vendors.approval_status') }}</th>
@@ -42,8 +47,7 @@
                             <th>{{ __('dashboard.Country') }}</th>
                             <th>{{ __('dashboard.City') }}</th>
                             <th>{{ __('dashboard.Area') }}</th>
-                            <th>{{ __('dashboard.users_vendors.store_logo') }}</th>
-                            <th>{{ __('dashboard.users_vendors.store_banner') }}</th>
+
                             <th>{{ __('dashboard.users_vendors.actions') }}</th>
                         </tr>
                         </thead>
@@ -58,47 +62,6 @@
                                 </td>
 
                                 <td>{{ $vendors->firstItem() + $loop->index }}</td>
-                                <td>{{ $vendor->name }}</td>
-                                <td>{{ $vendor->email }}</td>
-
-                                <td>
-                                    @if(!$vendor->store)
-                                        {{ __('dashboard.users_vendors.missing_store') }}
-                                    @else
-                                        {{ __('dashboard.users_vendors.' . ($approvalStatus ?: 'pending')) }}
-                                    @endif
-                                </td>
-
-                                <td>
-                                    {{ $vendor->store
-                                        ? ($vendor->store->status
-                                            ? __('dashboard.users_vendors.active')
-                                            : __('dashboard.users_vendors.inactive'))
-                                        : __('dashboard.users_vendors.not_available') }}
-                                </td>
-                                <td>
-                                    {{ $vendor->store?->country
-                                        ? (app()->getLocale() === 'ar'
-                                            ? $vendor->store->country->name_ar
-                                            : $vendor->store->country->name_en)
-                                        : '-' }}
-                                </td>
-
-                                <td>
-                                    {{ $vendor->store?->city
-                                        ? (app()->getLocale() === 'ar'
-                                            ? $vendor->store->city->name_ar
-                                            : $vendor->store->city->name_en)
-                                        : '-' }}
-                                </td>
-
-                                <td>
-                                    {{ $vendor->store?->area
-                                        ? (app()->getLocale() === 'ar'
-                                            ? $vendor->store->area->name_ar
-                                            : $vendor->store->area->name_en)
-                                        : '-' }}
-                                </td>
                                 <td>
                                     @if($vendor->store?->logo)
                                         <img
@@ -128,6 +91,60 @@
                                         <span class="text-muted">-</span>
                                     @endif
                                 </td>
+                                <td>{{ $vendor->name }}</td>
+                                <td>{{ $vendor->email }}</td>
+
+                                <td>
+                                    @if(!$vendor->store)
+                                        {{ __('dashboard.users_vendors.missing_store') }}
+                                    @else
+                                        {{ __('dashboard.users_vendors.' . ($approvalStatus ?: 'pending')) }}
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if(!$vendor->store)
+                                        <span class="badge badge-secondary">
+                                            {{ __('dashboard.users_vendors.missing_store') }}
+                                        </span>
+                                    @else
+                                        <?php
+                                            $approvalBadge = [
+                                                'approved' => 'success',
+                                                'rejected' => 'danger',
+                                                'pending'  => 'warning',
+                                            ][$approvalStatus] ?? 'secondary';
+                                        ?>
+
+                                        <span class="badge badge-{{ $approvalBadge }}">
+                                            {{ __('dashboard.users_vendors.' . ($approvalStatus ?: 'pending')) }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    {{ $vendor->store?->country
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $vendor->store->country->name_ar
+                                            : $vendor->store->country->name_en)
+                                        : '-' }}
+                                </td>
+
+                                <td>
+                                    {{ $vendor->store?->city
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $vendor->store->city->name_ar
+                                            : $vendor->store->city->name_en)
+                                        : '-' }}
+                                </td>
+
+                                <td>
+                                    {{ $vendor->store?->area
+                                        ? (app()->getLocale() === 'ar'
+                                            ? $vendor->store->area->name_ar
+                                            : $vendor->store->area->name_en)
+                                        : '-' }}
+                                </td>
+
 
                                 <td class="text-nowrap">
                                     @can('vendors.update')

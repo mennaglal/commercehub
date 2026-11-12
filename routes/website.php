@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\Web\SiteController;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
@@ -17,9 +16,6 @@ use Illuminate\Support\Facades\Route;
 | The pages that need a login are protected in the browser (the token) AND on the server (the API refuses without a token).
 | The pages themselves contain no private data.
 */
-Route::get('/change-language/{locale}', [LanguageController::class,'change'])
-    ->name('change-language');
-
 Route::middleware(SetLocale::class)->name('site.')->group(function () {
 
     /* ---------- the shop ---------- */

@@ -15,7 +15,7 @@ class PageController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:pages.index', only: ['index']),
+            new Middleware('permission:pages.index', only: ['index','show']),
             new Middleware('permission:pages.update', only: ['edit', 'update']),
         ];
     }
@@ -73,4 +73,5 @@ class PageController extends Controller implements HasMiddleware
             ->route('admin.pages.index')
             ->with('success', __('pages.updated_successfully'));
     }
+
 }

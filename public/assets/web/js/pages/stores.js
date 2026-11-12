@@ -61,7 +61,7 @@ Shop.pages.store = function () {
         const banner = store.banner_url ? ' style="background-image:url(\'' + encodeURI(store.banner_url).replace(/'/g, '%27') + '\');background-size:cover;background-position:center"' : '';
         const where = [store.area, store.city, store.country].filter(Boolean).join(', ');
 
-        $('#store-head').html('<div class="card-soft overflow-hidden"><div style="height:140px;background:linear-gradient(120deg,var(--brand-soft),#ffe9e6)"' + banner + '></div>'
+        $('#store-head').html('<div class="card-soft overflow-hidden"><div style="height:140px;background:linear-gradient(120deg,var(--secondary-color),#2c4f80)"' + banner + '></div>'
             + '<div class="p-4 d-flex gap-3 align-items-center flex-wrap"><img class="avatar" style="margin-top:-60px;border-radius:22px;width:96px;height:96px" src="' + Shop.esc(Shop.img(store.logo_url)) + '" alt="">'
             + '<div class="flex-fill"><h1 class="h3 mb-1">' + Shop.esc(store.name) + '</h1>'
             + (store.description ? '<p class="text-muted mb-1">' + Shop.esc(store.description) + '</p>' : '')

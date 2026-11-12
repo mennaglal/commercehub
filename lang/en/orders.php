@@ -11,6 +11,13 @@ return [
     'empty' => 'No orders found.',
     'all' => 'All',
     'none' => '-',
+    'export' => 'Export All Orders Excel',
+    'reset_filters' => 'Reset Filters',
+    'all_countries' => 'All Countries',
+    'all_cities' => 'All Cities',
+    'all_areas' => 'All Areas',
+    'shipping_price' => 'Shipping Price:',
+    'shipping_price_format' => ':area - :price',
 
     'sections' => [
         'customer' => 'Customer',
@@ -26,6 +33,7 @@ return [
         'store' => 'Store',
         'customer' => 'Customer',
         'items' => 'Items',
+        'total' => 'Total',
         'status' => 'Status',
         'payment' => 'Payment',
         'delivery' => 'Delivery',
@@ -43,7 +51,6 @@ return [
         'subtotal' => 'Subtotal',
         'discount' => 'Discount',
         'shipping' => 'Shipping',
-        'total' => 'Final Total',
     ],
 
     'fields' => [
@@ -75,8 +82,8 @@ return [
         'blogger' => 'Blogger',
         'commission' => 'Commission',
         'commission_status' => 'Commission status',
-        'cancel_warning' => 'Cancelling gives the stock, the coupon use and the commission back and cannot be undone.',
-        'return_warning' => 'A returned order gives the stock back and cancels the commission. Continue?',
+        'cancel_warning' => 'Cancelling restores the stock, coupon usage, and commission. This action cannot be undone.',
+        'return_warning' => 'Returning the order restores the stock and cancels the commission. Continue?',
         'confirm_first' => 'Confirm the order first to start the delivery.',
         'final' => 'This status is final.',
     ],
@@ -133,7 +140,6 @@ return [
         'delivery_not_allowed' => 'This delivery status change is not allowed.',
     ],
 
-    // Used by the JavaScript on the create page.
     'js' => [
         'product' => 'Product',
         'variant' => 'Variant',

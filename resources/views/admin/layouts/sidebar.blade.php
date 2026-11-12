@@ -16,9 +16,11 @@
         <!-- Dashboard -->
         <ul class="navbar-nav flex-fill w-100 mb-2">
             <li class="nav-item w-100">
-                <a class="nav-link" href="{{route('admin.dashboard')}}">
-                    <i class="fe fe-home fe-16 text-primary"></i>
-                    <span class="ml-3 item-text">{{ __('dashboard.dashboard') }}</span>
+                <a class="nav-link dropdown-toggle" href="{{ route('admin.dashboard') }}">
+                    <i class="fe fe-home text-primary"></i>
+                    <span class="ml-3 item-text">
+                {{ __('dashboard.dashboard') }}
+            </span>
                 </a>
             </li>
         </ul>
@@ -27,130 +29,7 @@
         {{-- Sidebar Sections --}}
         @php
             $sections = [
-                [
-                    'id' => 'admins',
-                    'icon' => 'fe fe-users',
-                    'label' => __('dashboard.Admins'),
-                    'permission' => 'admins.view',
-                    'items' => [
-                        [
-                            'route' => 'admin.admins.index',
-                            'text' => __('dashboard.Show-Admins'),
-                            'permission' => 'admins.view',
-                        ],
-                        [
-                            'route' => 'admin.admins.create',
-                            'text' => __('dashboard.Add-Admin'),
-                            'permission' => 'admins.create',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 'users',
-                    'icon' => 'fe fe-user',
-                    'label' => __('dashboard.Users'),
-                    'permission' => 'users.view',
-                    'items' => [
-                        [
-                            'route' => 'admin.users.index',
-                            'text' => __('dashboard.Show-Users'),
-                            'permission' => 'users.view',
-                        ],
-                        [
-                            'route' => 'admin.users.create',
-                            'text' => __('dashboard.Add-User'),
-                            'permission' => 'users.create',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 'vendors',
-                    'icon' => 'fe fe-shopping-bag',
-                    'label' => __('dashboard.Vendors'),
-                    'permission' => 'vendors.view',
-                    'items' => [
-                        [
-                            'route' => 'admin.vendors.index',
-                            'text' => __('dashboard.Show-Vendors'),
-                            'permission' => 'vendors.view',
-                        ],
-                        [
-                            'route' => 'admin.vendors.create',
-                            'text' => __('dashboard.Add-Vendor'),
-                            'permission' => 'vendors.create',
-                        ],
-                    ],
-                ],
-
-                [
-                    'id' => 'roles',
-                    'icon' => 'fe fe-shield',
-                    'label' => __('roles.title'),
-                    'permission' => 'roles.view',
-                    'items' => [
-                        [
-                            'route' => 'admin.roles.index',
-                            'text' => __('roles.title'),
-                            'permission' => 'roles.view',
-                        ],
-                        [
-                            'route' => 'admin.roles.create',
-                            'text' => __('roles.add'),
-                            'permission' => 'roles.create',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 'permissions',
-                    'icon' => 'fe fe-lock',
-                    'label' => __('roles.permissions_title'),
-                    'permission' => 'permissions.view',
-                    'items' => [
-                        [
-                            'route' => 'admin.permissions.index',
-                            'text' => __('roles.permissions_title'),
-                            'permission' => 'permissions.view',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 'categories',
-                    'icon' => 'fe fe-grid',
-                    'label' => __('dashboard.Categories'),
-                    'permission' => 'categories.view',
-                    'items' => [
-                        [
-                            'route' => 'admin.categories.index',
-                            'text' => __('dashboard.Show-Categories'),
-                            'permission' => 'categories.view',
-                        ],
-                        [
-                            'route' => 'admin.categories.create',
-                            'text' => __('dashboard.Add-Category'),
-                            'permission' => 'categories.create',
-                        ],
-                    ],
-                ],
-                [
-                    'id' => 'sub-categories',
-                    'icon' => 'fe fe-list',
-                    'label' => __('dashboard.Sub-Categories'),
-                    'permission' => 'categories.view',
-                    'items' => [
-                        [
-                            'route' => 'admin.sub-categories.index',
-                            'text' => __('dashboard.Show-Sub-Categories'),
-                            'permission' => 'categories.view',
-                        ],
-                        [
-                            'route' => 'admin.sub-categories.create',
-                            'text' => __('dashboard.Add-Sub-Category'),
-                            'permission' => 'categories.create',
-                        ],
-                    ],
-                ],
-
-                [
+                 [
                     'id' => 'variant-types',
                     'icon' => 'fe fe-sliders',
                     'label' => __('dashboard.variant_types.title'),
@@ -234,6 +113,132 @@
                             'route' => 'admin.coupons.create',
                             'text' => __('dashboard.Add-Coupon'),
                             'permission' => 'coupons.create',
+                        ],
+                    ],
+                ],
+                   [
+                    'id' => 'categories',
+                    'icon' => 'fe fe-grid',
+                    'label' => __('dashboard.Categories'),
+                    'permission' => 'categories.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.categories.index',
+                            'text' => __('dashboard.Show-Categories'),
+                            'permission' => 'categories.view',
+                        ],
+                        [
+                            'route' => 'admin.categories.create',
+                            'text' => __('dashboard.Add-Category'),
+                            'permission' => 'categories.create',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'sub-categories',
+                    'icon' => 'fe fe-list',
+                    'label' => __('dashboard.Sub-Categories'),
+                    'permission' => 'categories.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.sub-categories.index',
+                            'text' => __('dashboard.Show-Sub-Categories'),
+                            'permission' => 'categories.view',
+                        ],
+                        [
+                            'route' => 'admin.sub-categories.create',
+                            'text' => __('dashboard.Add-Sub-Category'),
+                            'permission' => 'categories.create',
+                        ],
+                    ],
+                ],
+
+
+
+
+                [
+                    'id' => 'users',
+                    'icon' => 'fe fe-user',
+                    'label' => __('dashboard.Users'),
+                    'permission' => 'users.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.users.index',
+                            'text' => __('dashboard.Show-Users'),
+                            'permission' => 'users.view',
+                        ],
+                        [
+                            'route' => 'admin.users.create',
+                            'text' => __('dashboard.Add-User'),
+                            'permission' => 'users.create',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'vendors',
+                    'icon' => 'fe fe-shopping-bag',
+                    'label' => __('dashboard.Vendors'),
+                    'permission' => 'vendors.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.vendors.index',
+                            'text' => __('dashboard.Show-Vendors'),
+                            'permission' => 'vendors.view',
+                        ],
+                        [
+                            'route' => 'admin.vendors.create',
+                            'text' => __('dashboard.Add-Vendor'),
+                            'permission' => 'vendors.create',
+                        ],
+                    ],
+                ],
+
+                [
+                    'id' => 'roles',
+                    'icon' => 'fe fe-shield',
+                    'label' => __('roles.title'),
+                    'permission' => 'roles.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.roles.index',
+                            'text' => __('roles.title'),
+                            'permission' => 'roles.view',
+                        ],
+                        [
+                            'route' => 'admin.roles.create',
+                            'text' => __('roles.add'),
+                            'permission' => 'roles.create',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'permissions',
+                    'icon' => 'fe fe-lock',
+                    'label' => __('roles.permissions_title'),
+                    'permission' => 'permissions.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.permissions.index',
+                            'text' => __('roles.permissions_title'),
+                            'permission' => 'permissions.view',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'admins',
+                    'icon' => 'fe fe-users',
+                    'label' => __('dashboard.Admins'),
+                    'permission' => 'admins.view',
+                    'items' => [
+                        [
+                            'route' => 'admin.admins.index',
+                            'text' => __('dashboard.Show-Admins'),
+                            'permission' => 'admins.view',
+                        ],
+                        [
+                            'route' => 'admin.admins.create',
+                            'text' => __('dashboard.Add-Admin'),
+                            'permission' => 'admins.create',
                         ],
                     ],
                 ],

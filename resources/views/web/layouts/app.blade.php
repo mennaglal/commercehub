@@ -10,7 +10,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#5b2a86">
+    <meta name="theme-color" content="#1D3557">
 
     <title>{{ $pageTitle ? $pageTitle . ' | ' . $siteName : $siteName . ' - ' . __('web.brand.tagline') }}</title>
     <meta name="description" content="@yield('description', __('web.brand.description'))">

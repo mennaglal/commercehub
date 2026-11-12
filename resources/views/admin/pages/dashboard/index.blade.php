@@ -426,7 +426,7 @@
                             '#9270DB',
                             '#EA6B75',
                             '#299DB5',
-                            '#8493A8',
+                            '#a14393',
                         ];
 
                         $circumference = 427.256;
@@ -902,9 +902,6 @@
                         </table>
                     </div>
 
-                    <div class="px-3 pb-3 finance-note">
-                        {{ __('dashboard.stats.finance_definition_note') }}
-                    </div>
                 </div>
             </div>
         </div>

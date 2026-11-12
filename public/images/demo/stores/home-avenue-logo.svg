@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="110" fill="#B79B78"/>
+<circle cx="256" cy="210" r="128" fill="#ffffff" opacity=".16"/>
+<text x="256" y="285" text-anchor="middle" font-family="Arial,sans-serif" font-size="112" font-weight="700" fill="#ffffff">HA</text>
+<path d="M120 365h272" stroke="#fff" stroke-width="12" stroke-linecap="round" opacity=".75"/>
+</svg>

@@ -1,10 +1,11 @@
-/* Product page: gallery, price, options (Color, Size ...), stock, add to cart, related products. */
+/* Product page: picture, price with the discount, options (Color, Size ...), stock, add to cart, details, related products.
+   On phones a bar at the bottom keeps the price and the "Add to cart" button always visible. */
 Shop.pages.product = function () {
     const slug = $('#product-root').data('slug');
     const $root = $('#product-root');
 
     Shop.api.get('/products/' + encodeURIComponent(slug)).then((res) => render(res.data)).catch((error) => {
-        $root.html(Shop.ui.empty('bi-emoji-frown', error.status === 404 ? Shop.t('product.not_found') : error.message, '', '<a class="btn btn-brand mt-3" href="/shop">' + Shop.esc(Shop.t('nav.shop')) + '</a>'));
+        $root.html(Shop.ui.empty('bi-emoji-frown', error.status === 404 ? Shop.t('product.not_found') : error.message, '', '<a class="btn btn-accent mt-3" href="/shop">' + Shop.esc(Shop.t('nav.shop')) + '</a>'));
     });
 
     function render(product) {
@@ -33,24 +34,37 @@ Shop.pages.product = function () {
             + '<i class="bi bi-chevron-right"></i><span>' + Shop.esc(product.name) + '</span></nav>';
 
         $root.html(crumbs
-            + '<div class="row g-4 g-lg-5"><div class="col-lg-6"><div class="gallery-main"><img src="' + Shop.esc(Shop.img(product.image_url)) + '" alt="' + Shop.esc(product.name) + '"></div></div>'
-            + '<div class="col-lg-6">'
+            + '<div class="row g-4"><div class="col-lg-5"><div class="gallery-main"><img src="' + Shop.esc(Shop.img(product.image_url)) + '" alt="' + Shop.esc(product.name) + '"></div></div>'
+            + '<div class="col-lg-7"><div class="buy-box">'
             + (product.store_details ? '<a href="/stores/' + encodeURIComponent(product.store_details.slug) + '" class="chip mb-2"><i class="bi bi-shop"></i> ' + Shop.esc(product.store_details.name) + '</a>' : '')
-            + '<h1 class="h2 mb-2">' + Shop.esc(product.name) + '</h1>'
+            + '<h1 class="h3 mb-2">' + Shop.esc(product.name) + '</h1>'
             + '<div class="text-muted small mb-3">SKU: <span id="p-sku">' + Shop.esc(product.sku) + '</span></div>'
-            + '<div class="mb-2" id="p-price"></div><div class="mb-3" id="p-stock"></div>'
+            + '<div class="mb-2" id="p-price"></div><div class="mb-3" id="p-stock"></div><hr>'
             + '<div id="p-options"></div>'
-            + '<div class="d-flex flex-wrap gap-3 align-items-center my-4">'
+            + '<div class="d-flex flex-wrap gap-2 align-items-center my-3">'
             + '<div class="qty"><button type="button" id="q-minus" aria-label="-">&minus;</button><input type="number" id="q-input" value="1" min="1" max="99" inputmode="numeric"><button type="button" id="q-plus" aria-label="+">+</button></div>'
-            + '<button type="button" class="btn btn-brand btn-lg flex-fill" id="p-add"><i class="bi bi-bag-plus me-1"></i>' + Shop.esc(Shop.t('product.add_to_cart')) + '</button>'
-            + '<button type="button" class="btn btn-accent btn-lg" id="p-buy">' + Shop.esc(Shop.t('product.buy_now')) + '</button></div>'
-            + '<div class="card-soft pad"><div class="d-flex gap-3"><i class="bi bi-arrow-repeat fs-3 text-accent" style="color:var(--accent)"></i><div><strong>' + Shop.esc(Shop.t('product.return_title')) + '</strong><div class="text-muted small">' + Shop.esc(Shop.t('product.return_text')) + '</div></div></div></div>'
-            + '</div></div>'
-            + (product.description ? '<div class="card-soft pad mt-4"><h5>' + Shop.esc(Shop.t('product.description')) + '</h5><div class="rich-content" id="p-desc"></div></div>' : '')
-            + '<section class="mt-5 d-none" id="related-box"><div class="section-head"><h3 class="section-title">' + Shop.esc(Shop.t('product.related')) + '</h3></div><div class="row g-3" id="related"></div></section>');
+            + '<button type="button" class="btn btn-accent btn-lg flex-fill" id="p-add"><i class="bi bi-bag-plus me-1"></i>' + Shop.esc(Shop.t('product.add_to_cart')) + '</button>'
+            + '<button type="button" class="btn btn-brand btn-lg" id="p-buy">' + Shop.esc(Shop.t('product.buy_now')) + '</button></div>'
+            + '<div class="assure"><div><i class="bi bi-arrow-repeat"></i>' + Shop.esc(Shop.t('product.assure_returns')) + '</div>'
+            + '<div><i class="bi bi-shield-check"></i>' + Shop.esc(Shop.t('product.assure_secure')) + '</div>'
+            + '<div><i class="bi bi-truck"></i>' + Shop.esc(Shop.t('product.assure_delivery')) + '</div></div>'
+            + '</div></div></div>'
+
+            // ---- details / shipping and returns
+            + '<div class="card-soft mt-4"><ul class="nav nav-tabs px-3 pt-2" role="tablist">'
+            + '<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-desc" type="button">' + Shop.esc(Shop.t('product.description')) + '</button></li>'
+            + '<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-ship" type="button">' + Shop.esc(Shop.t('product.shipping_tab')) + '</button></li></ul>'
+            + '<div class="tab-content p-3 p-md-4"><div class="tab-pane fade show active rich-content" id="tab-desc"></div>'
+            + '<div class="tab-pane fade rich-content" id="tab-ship"><p>' + Shop.esc(Shop.t('product.shipping_text')) + '</p><p><strong>' + Shop.esc(Shop.t('product.return_title')) + ':</strong> ' + Shop.esc(Shop.t('product.return_text')) + '</p></div></div></div>'
+
+            + '<section class="mt-5 d-none" id="related-box"><div class="section-head"><h3 class="section-title">' + Shop.esc(Shop.t('product.related')) + '</h3></div><div class="row g-3" id="related"></div></section>'
+
+            // ---- the bar of the phones
+            + '<div class="buy-bar on" id="buy-bar"><div class="flex-fill"><div class="price" id="bb-price"></div></div>'
+            + '<button type="button" class="btn btn-accent" id="bb-add"><i class="bi bi-bag-plus me-1"></i>' + Shop.esc(Shop.t('product.add_to_cart')) + '</button></div>');
 
         // The description is plain text written by the vendor: line breaks are kept, nothing is read as HTML.
-        $('#p-desc').text(product.description).css('white-space', 'pre-line');
+        $('#tab-desc').text(product.description || '-').css('white-space', 'pre-line');
 
         // ---------- price + stock (re-drawn after every choice)
         const drawPrice = () => {
@@ -58,9 +72,13 @@ Shop.pages.product = function () {
             const final = variant ? variant.final_price : product.final_price;
             const old = variant ? (variant.discount_price !== null ? variant.price : null) : (product.is_sale && product.sale_price !== null ? product.price : null);
             const fromText = product.has_variants && !variant ? '<small class="text-muted me-1">' + Shop.esc(Shop.t('product.from')) + '</small>' : '';
+            const off = old && old > final ? Math.round((1 - final / old) * 100) : 0;
 
-            $('#p-price').html(fromText + Shop.currency.html(final, 'price-big') + (old ? ' ' + Shop.currency.html(old, 'price-old fs-5') : ''));
-            Shop.currency.render($('#p-price'));
+            $('#p-price').html(fromText + Shop.currency.html(final, 'price-big')
+                + (old ? ' ' + Shop.currency.html(old, 'price-old fs-6 ms-2') : '')
+                + (off ? ' <span class="discount-chip ms-2">-' + off + '%</span>' : ''));
+            $('#bb-price').html(fromText + Shop.currency.html(final));
+            Shop.currency.render($('#p-price, #bb-price'));
 
             const stock = stockOf();
             let pill = '';
@@ -126,6 +144,7 @@ Shop.pages.product = function () {
 
             if (product.has_variants && !variant) {
                 Shop.ui.toast(Shop.t('product.choose_options'), 'error');
+                $('html, body').animate({ scrollTop: $('#p-options').offset().top - 140 }, 250);
 
                 return false;
             }
@@ -152,7 +171,7 @@ Shop.pages.product = function () {
             return true;
         };
 
-        $('#p-add').on('click', () => { if (addToCart()) { Shop.ui.toast(Shop.t('cart.added'), 'success'); } });
+        $('#p-add, #bb-add').on('click', () => { if (addToCart()) { Shop.ui.toast(Shop.t('cart.added'), 'success'); } });
         $('#p-buy').on('click', () => { if (addToCart()) { window.location.href = '/cart'; } });
 
         redraw();

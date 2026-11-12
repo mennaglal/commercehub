@@ -14,9 +14,7 @@
 
                     <i class="fas fa-file-excel"></i>
 
-                    {{ app()->getLocale() === 'ar'
-                        ? 'تصدير كل الطلبات Excel'
-                        : 'Export All Orders Excel' }}
+                    {{ __('orders.export') }}
 
                 </a>
 
@@ -87,10 +85,7 @@
             {{-- Country --}}
             <div class="col-md-3 mb-2">
                 <select name="country_id" id="country_id" class="form-control">
-                    <option value="">
-                        {{ app()->getLocale() === 'ar' ? 'كل الدول' : 'All Countries' }}
-                    </option>
-
+                    <option value="">{{ __('orders.all_countries') }}</option>
                     @foreach($countries as $country)
                         <option
                             value="{{ $country->id }}"
@@ -110,9 +105,7 @@
                     class="form-control"
                     {{ request('country_id') ? '' : 'disabled' }}
                 >
-                    <option value="">
-                        {{ app()->getLocale() === 'ar' ? 'كل المدن' : 'All Cities' }}
-                    </option>
+                    <option value="">{{ __('orders.all_cities') }}</option>
                 </select>
             </div>
 
@@ -124,16 +117,14 @@
                     class="form-control"
                     {{ request('region_id') ? '' : 'disabled' }}
                 >
-                    <option value="">
-                        {{ app()->getLocale() === 'ar' ? 'كل المناطق' : 'All Areas' }}
-                    </option>
+                    <option value="">{{ __('orders.all_areas') }}</option>
                 </select>
             </div>
 
             {{-- Shipping Price --}}
             <div class="col-md-3 mb-2">
                 <div class="form-control-plaintext fw-bold">
-                    {{ app()->getLocale() === 'ar' ? 'سعر الشحن:' : 'Shipping Price:' }}
+                    {{ __('orders.shipping_price') }}
                     <span id="shipping_price_display">0.00</span>
                 </div>
             </div>
@@ -146,7 +137,7 @@
 
             <div class="col-md-3 mb-2">
                 <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary w-100">
-                    {{ app()->getLocale() === 'ar' ? 'إعادة تعيين الفلاتر' : 'Reset Filters' }}
+                    {{ __('orders.reset_filters') }}
                 </a>
             </div>
 
@@ -165,7 +156,7 @@
             <input type="hidden" name="ids">
 
             <button type="submit" class="btn btn-danger mb-3">
-                @lang('dashboard.delete_all')
+                {{ __('dashboard.delete_all') }}
             </button>
         </form>
 
@@ -185,7 +176,6 @@
                             >
                         </th>
                         <th>#</th>
-                        <th>ID</th>
                         <th>{{ __('orders.columns.number') }}</th>
                         <th>{{ __('orders.columns.customer') }}</th>
                         <th>{{ __('orders.columns.store') }}</th>
@@ -221,8 +211,6 @@
                             {{-- Index --}}
                             <td>{{ $orders->firstItem() + $loop->index }}</td>
 
-                            {{-- Database ID --}}
-                            <td>{{ $order->id }}</td>
 
                             <td>{{ $order->order_number }}</td>
 

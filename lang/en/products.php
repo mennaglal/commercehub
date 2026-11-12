@@ -83,4 +83,35 @@ return [
     ],
     'store' => 'Store',
     'main_category_label' => 'Main Category',
+    'statistics' => [
+        'total' => 'Total Products',
+        'total_description' => 'All registered products',
+
+        'active' => 'Active Products',
+        'active_description' => 'Currently active products',
+
+        'low_stock' => 'Low Stock Products',
+        'low_stock_description' => 'Products with stock between 1 and :count',
+
+        'out_of_stock' => 'Out of Stock',
+        'out_of_stock_description' => 'Products with no available stock',
+
+        'all_stock' => 'All Stock',
+        'in_stock' => 'In Stock',
+        'simple' => 'Simple',
+        'variable' => 'Variable',
+        'all_types' => 'All Types',
+        'all_statuses' => 'All Statuses',
+        'all_prices' => 'All Prices',
+        'on_sale' => 'On Sale',
+        'regular_price' => 'Regular Price',
+        'stock_status' => 'Stock Status',
+        'product_type' => 'Product Type',
+        'sale_status' => 'Sale Status',
+        'filter' => 'Filter',
+    ],
+
+    'stock_status' => 'Stock Status',
+    'product_type' => 'Product Type',
+    'sale_status' => 'Sale',
 ];

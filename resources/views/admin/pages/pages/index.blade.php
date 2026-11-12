@@ -78,16 +78,7 @@
 
                                     </a>
 
-                                    @if($page->is_active)
-                                        <a href="{{ route('pages.show', $page->slug) }}"
-                                           target="_blank"
-                                           class="btn btn-sm btn-outline-info">
 
-                                            <i class="fe fe-eye mr-1"></i>
-                                            {{ __('pages.preview') }}
-
-                                        </a>
-                                    @endif
 
                                 </td>
 

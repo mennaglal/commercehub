@@ -83,4 +83,35 @@ return [
     ],
     'store' => 'المتجر',
     'main_category_label' => 'القسم الرئيسي',
+
+    'statistics' => [
+        'total' => 'إجمالي المنتجات',
+        'total_description' => 'إجمالي المنتجات المسجلة بالنظام',
+
+        'active' => 'المنتجات النشطة',
+        'active_description' => 'المنتجات المفعلة حاليًا',
+
+        'low_stock' => 'منتجات منخفضة المخزون',
+        'low_stock_description' => 'المنتجات التي يتراوح مخزونها بين 1 و :count',
+
+        'out_of_stock' => 'منتجات نفد مخزونها',
+        'out_of_stock_description' => 'المنتجات غير المتوفرة بالمخزون',
+
+        'all_stock' => 'كل حالات المخزون',
+        'in_stock' => 'متوفر بالمخزون',
+        'simple' => 'منتج عادي',
+        'variable' => 'منتج متعدد الخيارات',
+        'all_types' => 'كل أنواع المنتجات',
+        'all_statuses' => 'كل الحالات',
+        'all_prices' => 'كل الأسعار',
+        'on_sale' => 'عليه خصم',
+        'regular_price' => 'السعر العادي',
+        'stock_status' => 'حالة المخزون',
+        'product_type' => 'نوع المنتج',
+        'sale_status' => 'حالة الخصم',
+        'filter' => 'تصفية',
+    ],
+    'stock_status' => 'حالة المخزون',
+    'product_type' => 'نوع المنتج',
+    'sale_status' => 'حالة الخصم',
 ];

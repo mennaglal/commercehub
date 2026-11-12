@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
+    public const LOW_STOCK_THRESHOLD = 5;
+
     protected $fillable = [
         'store_id',
         'category_id',

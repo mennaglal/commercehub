@@ -55,7 +55,7 @@
 
         <div class="footer-bottom d-flex flex-wrap justify-content-between gap-2">
             <span>&copy; {{ date('Y') }} {{ $site['name'][$isAr ? 'ar' : 'en'] }}. {{ __('web.footer.rights') }}</span>
-            <span><i class="bi bi-shield-lock me-1"></i>{{ __('web.footer.secure') }}</span>
+            <span class="pay-icons d-flex align-items-center"><small class="me-2">{{ __('web.footer.pay_methods') }}</small><i class="bi bi-cash-coin"></i><i class="bi bi-credit-card-2-front"></i><i class="bi bi-bank"></i><i class="bi bi-shield-lock"></i></span>
         </div>
     </div>
 </footer>
