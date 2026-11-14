@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderReturn;
 use App\Models\User;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The orders and returns of the logged-in customer.
@@ -35,6 +37,69 @@ class CustomerOrderService
 
         return $this->loadDetails($order);
     }
+
+    public function updatePayment(User $user, string $number, array $data): Order
+    {
+        $order = $this->findOrder($user, $number);
+
+        // Only online orders can receive payment updates.
+        if ($order->payment_method !== Order::PAYMENT_ONLINE) {
+            throw ValidationException::withMessages([
+                'payment_method' => 'This order does not support online payment.',
+            ]);
+        }
+
+        if ($order->status === Order::STATUS_CANCELLED) {
+            throw ValidationException::withMessages([
+                'status' => 'Cancelled orders cannot receive payments.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($order, $data) {
+
+            $order = Order::lockForUpdate()->findOrFail($order->id);
+
+            $newStatus = $data['payment_status'];
+
+            // Prevent duplicate successful payment updates.
+            if (
+                $order->payment_status === Order::PAYMENT_PAID &&
+                $newStatus === Order::PAYMENT_PAID
+            ) {
+                return $this->loadDetails($order);
+            }
+
+            if (
+                $newStatus !== $order->payment_status &&
+                ! in_array(
+                    $newStatus,
+                    Order::PAYMENT_TRANSITIONS[$order->payment_status] ?? [],
+                    true
+                )
+            ) {
+                throw ValidationException::withMessages([
+                    'payment_status' => 'Payment status transition is not allowed.',
+                ]);
+            }
+
+            $changes = collect($data)->only([
+                'payment_status',
+                'payment_id',
+                'invoice_id',
+                'invoice_url',
+                'payment_data',
+            ])->all();
+
+            if ($newStatus === Order::PAYMENT_PAID) {
+                $changes['paid_at'] = $order->paid_at ?? now();
+            }
+
+            $order->update($changes);
+
+            return $this->loadDetails($order->fresh());
+        });
+    }
+
 
     /* ---------------- Orders ---------------- */
 

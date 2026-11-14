@@ -35,4 +35,33 @@ return [
         ],
     ],
 
+    'payments' => [
+        'currency' => env('PAYMENT_CURRENCY', 'KWD'),
+    ],
+
+    'myfatoorah' => [
+        'base_url' => env(
+            'MYFATOORAH_BASE_URL',
+            'https://apitest.myfatoorah.com'
+        ),
+        'token' => env('MYFATOORAH_TOKEN'),
+    ],
+
+    'paymob' => [
+        'base_url' => env(
+            'PAYMOB_BASE_URL',
+            'https://accept.paymob.com'
+        ),
+        'api_key' => env('PAYMOB_API_KEY'),
+    ],
+
+    'paypal' => [
+        'base_url' => env(
+            'PAYPAL_BASE_URL',
+            'https://api-m.sandbox.paypal.com'
+        ),
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'secret' => env('PAYPAL_SECRET'),
+    ],
+
 ];

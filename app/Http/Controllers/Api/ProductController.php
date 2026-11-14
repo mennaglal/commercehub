@@ -26,11 +26,11 @@ class ProductController extends Controller
         );
     }
 
-    // GET /products/{slug}
-    public function show(string $slug)
+    // GET /products/{id}
+    public function show(int $id)
     {
         return ApiResponse::success(
-            new ProductDetailResource($this->catalog->productBySlug($slug)),
+            new ProductDetailResource($this->catalog->productById($id)),
             'Product fetched successfully'
         );
     }

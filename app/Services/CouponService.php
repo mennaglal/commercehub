@@ -53,9 +53,14 @@ class CouponService
         $eligible = round($eligibleLines->sum('line_total'), 2);
 
         if ($eligible <= 0) {
-            $this->fail(__('coupons.errors.no_eligible_items'));
+            return [
+                'coupon' => $coupon,
+                'discount' => 0.0,
+                'commission' => 0.0,
+                'eligible_keys' => [],
+                'message' => __('coupons.errors.no_eligible_items'),
+            ];
         }
-
         if ($coupon->min_order_amount !== null && $eligible < (float) $coupon->min_order_amount) {
             $this->fail(__('coupons.errors.min_amount', ['amount' => number_format($coupon->min_order_amount, 2)]));
         }

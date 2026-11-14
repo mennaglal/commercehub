@@ -32,7 +32,17 @@ class CatalogService
     {
         return Product::query()
             ->where('products.status', true)
-            ->whereHas('store', fn ($store) => $store->where('status', true)->where('approval_status', 'approved'));
+            ->where(function ($query) {
+                // Platform Products: products without a store.
+                $query->whereNull('products.store_id')
+
+                    // Vendor Products: products belonging to an active, approved store.
+                    ->orWhereHas('store', fn ($store) => $store
+                        ->where('status', true)
+                        ->where('approval_status', 'approved')
+                    );
+            });
+
     }
 
     public function products(array $filters): LengthAwarePaginator
@@ -88,14 +98,18 @@ class CatalogService
     }
 
     // The product page: only the active variants, with their values and the type of each value.
-    public function productBySlug(string $slug): Product
+    public function productById(int $id): Product
     {
         return $this->visibleProducts()
-            ->where('products.slug', $slug)
+            ->where('products.id', $id)
             ->with([
                 'category.parent',
-                'store.country', 'store.city', 'store.area',
-                'variants' => fn ($variants) => $variants->where('status', true)->with('values.variantType'),
+                'store.country',
+                'store.city',
+                'store.area',
+                'variants' => fn ($variants) => $variants
+                    ->where('status', true)
+                    ->with('values.variantType'),
             ])
             ->firstOrFail();
     }
@@ -111,12 +125,14 @@ class CatalogService
             ->paginate($perPage);
     }
 
-    public function storeBySlug(string $slug): Store
+    public function storeById(int $id): Store
     {
         return $this->visibleStores()
-            ->where('slug', $slug)
+            ->where('stores.id', $id)
             ->with(['country', 'city', 'area'])
-            ->withCount(['products' => fn ($products) => $products->where('status', true)])
+            ->withCount([
+                'products' => fn ($products) => $products->where('status', true)
+            ])
             ->firstOrFail();
     }
 

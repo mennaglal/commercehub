@@ -59,7 +59,6 @@
                         <li><a class="dropdown-item" href="{{ route('site.account.orders') }}"><i class="bi bi-bag-check me-2"></i>{{ __('web.nav.orders') }}</a></li>
                         <li><a class="dropdown-item" href="{{ route('site.account.returns') }}"><i class="bi bi-arrow-repeat me-2"></i>{{ __('web.nav.returns') }}</a></li>
                         <li><a class="dropdown-item" href="{{ route('site.account.notifications') }}"><i class="bi bi-bell me-2"></i>{{ __('web.nav.notifications') }}</a></li>
-                        <li class="js-vendor-only d-none"><a class="dropdown-item" href="{{ route('site.vendor') }}"><i class="bi bi-shop me-2"></i>{{ __('web.nav.vendor') }}</a></li>
                         <li class="js-not-vendor"><a class="dropdown-item" href="{{ route('site.become-vendor') }}"><i class="bi bi-shop-window me-2"></i>{{ __('web.nav.become_vendor') }}</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger js-logout" href="#"><i class="bi bi-box-arrow-right me-2"></i>{{ __('web.nav.logout') }}</a></li>

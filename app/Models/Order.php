@@ -255,7 +255,10 @@ class Order extends Model
     {
         return $this->belongsTo(Blogger::class);
     }
-
+    public function paymentAttempts(): HasMany
+    {
+        return $this->hasMany(PaymentAttempt::class);
+    }
     /* ---------------- Helpers ---------------- */
 
     // Can the customer still return something? (delivered, and inside the return window)

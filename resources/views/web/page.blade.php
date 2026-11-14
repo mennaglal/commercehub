@@ -1,17 +1,7 @@
-@extends('web.layouts.app')
-@section('title', $page->title)
+@extends('web.nexus.page')
+@section('title', 'Information')
 @section('page', 'page')
-
+@php($slug = $slug)
 @section('content')
-<div class="page-hero"><div class="container"><h1 id="page-title">{{ $page->title }}</h1></div></div>
-
-<section class="container pb-4" id="page-root" data-slug="{{ $slug }}">
-    <div class="card-soft pad mx-auto" style="max-width:860px">
-        <div class="rich-content" id="page-content"><div class="skeleton" style="height:200px"></div></div>
-    </div>
-</section>
+<div id="nx-app" data-page="page" data-slug="{{ $slug }}"><div class="nx-empty"><div class="spinner-border"></div></div></div>
 @endsection
-
-@push('scripts')
-<script src="{{ asset('assets/web/js/pages/contact.js') }}?v={{ config('website.version') }}"></script>
-@endpush

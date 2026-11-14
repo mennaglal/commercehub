@@ -47,6 +47,28 @@ class OrderController extends Controller
         return ApiResponse::success(new OrderResource($order), 'Order placed successfully', 201);
     }
 
+    public function updatePayment(Request $request, string $orderNumber)
+    {
+        $data = $request->validate([
+            'payment_status' => ['required', 'in:paid,failed'],
+            'payment_id' => ['required', 'string', 'max:255'],
+            'invoice_id' => ['nullable', 'string', 'max:255'],
+            'invoice_url' => ['required', 'url', 'max:2048'],
+            'payment_data' => ['nullable', 'array'],
+        ]);
+
+        $order = $this->orders->updatePayment(
+            $request->user(),
+            $orderNumber,
+            $data
+        );
+
+        return ApiResponse::success(
+            new OrderResource($order),
+            'Payment updated successfully'
+        );
+    }
+
     // GET /orders?per_page=
     public function index(Request $request)
     {

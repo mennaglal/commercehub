@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CurrencyController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PageController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReturnController;
@@ -45,9 +46,9 @@ Route::get('/currencies', [CurrencyController::class, 'index']);
 // Catalog
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products/{slug}', [ProductController::class, 'show']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/stores', [StoreController::class, 'index']);
-Route::get('/stores/{slug}', [StoreController::class, 'show']);
+Route::get('/stores/{id}', [StoreController::class, 'show']);
 
 // Pages (about us, privacy policy, return policy ...) and the contact form
 Route::get('/pages', [PageController::class, 'index']);
@@ -73,6 +74,7 @@ Route::middleware(['auth:sanctum', EnsureActiveUser::class])->group(function () 
 
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('/orders/{orderNumber}/payment', [OrderController::class, 'updatePayment']);
 
     Route::prefix('/orders/{orderNumber}')->where(['orderNumber' => '[A-Za-z0-9\-]+'])->group(function () {
         Route::get('/', [OrderController::class, 'show']);
@@ -80,7 +82,12 @@ Route::middleware(['auth:sanctum', EnsureActiveUser::class])->group(function () 
         Route::get('/returnable-items', [ReturnController::class, 'returnable']);
         Route::post('/returns', [ReturnController::class, 'store'])->middleware('throttle:10,1');
     });
-
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post(
+            '/orders/{orderNumber}/verify-payment',
+            [PaymentController::class, 'verify']
+        );
+    });
     Route::get('/returns', [ReturnController::class, 'index']);
     Route::get('/returns/{returnNumber}', [ReturnController::class, 'show'])->where('returnNumber', '[A-Za-z0-9\-]+');
 

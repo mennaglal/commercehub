@@ -31,8 +31,8 @@ class StoreController extends Controller
     }
 
     // GET /stores/{slug}
-    public function show(string $slug)
+    public function show(int $id)
     {
-        return ApiResponse::success(new StoreResource($this->catalog->storeBySlug($slug)), 'Store fetched successfully');
+        return ApiResponse::success(new StoreResource($this->catalog->storeById($id)), 'Store fetched successfully');
     }
 }

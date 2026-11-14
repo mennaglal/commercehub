@@ -334,7 +334,7 @@ class OrderService
                 $this->fail(__('orders.errors.product_unavailable'));
             }
 
-            $name = $product->name_en;
+            $name = $product->name;
 
             if ($product->has_variants && ! $variant) {
                 $this->fail(__('orders.errors.variant_required', ['product' => $name]));
@@ -438,6 +438,7 @@ class OrderService
 
             $discount = $applied['discount'];
             $couponCode = $applied['coupon']->code;
+            $couponMessage = $applied['message'] ?? null;
         }
 
         $shipping = $this->shippingFor($data['area_id'] ?? null);
@@ -449,6 +450,8 @@ class OrderService
             'shipping_total' => $shipping,
             'total' => round($subtotal - $discount + $shipping, 2),
             'coupon_code' => $couponCode,
+            'coupon_message' => $couponMessage,
+
         ];
     }
 
